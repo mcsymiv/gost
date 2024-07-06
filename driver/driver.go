@@ -2,12 +2,16 @@ package driver
 
 import (
 	"fmt"
+	"os/exec"
 
 	"github.com/mcsymiv/gost/capabilities"
 	"github.com/mcsymiv/gost/client"
+	"github.com/mcsymiv/gost/command"
+	"github.com/mcsymiv/gost/config"
 )
 
 type WebDriver struct {
+	Command      *exec.Cmd
 	WebClient    *client.WebClient
 	Capabilities *capabilities.Capabilities
 	SessionId    string
@@ -50,13 +54,20 @@ func Driver(capsFn ...capabilities.CapabilitiesFunc) *WebDriver {
 	}
 
 	webclient := client.WebDriverClient()
+
+	// TODO: start driver
+	exec, err := command.Cmd(caps, config.Config)
+	if err != nil {
+		panic(fmt.Sprintf("error on starting driver command: %v", err))
+	}
+
 	session, err := webclient.Session(caps)
 	if err != nil {
-		fmt.Println(err)
-		return nil
+		panic(fmt.Sprintf("error on session create: %v", err))
 	}
 
 	return &WebDriver{
+		Command:      exec,
 		Capabilities: caps,
 		WebClient:    webclient,
 		SessionId:    session.Id,

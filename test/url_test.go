@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/mcsymiv/gost/config"
 	"github.com/mcsymiv/gost/driver"
@@ -24,8 +23,7 @@ func setup_url() func() {
 	}()
 
 	return func() {
-		shutdownCtx, shutdownRelease := context.WithTimeout(context.Background(), 2*time.Second)
-		defer shutdownRelease()
+		shutdownCtx := context.Background()
 
 		if err := srv.Server.Shutdown(shutdownCtx); err != nil {
 			panic(fmt.Sprintf("HTTP shutdown error: %v", err))
@@ -39,6 +37,7 @@ func TestUrl(t *testing.T) {
 	defer shutdown()
 
 	wd := driver.Driver()
+	defer wd.Command.Process.Kill()
+
 	wd.Open("https://google.com")
-	time.Sleep(5 * time.Second)
 }

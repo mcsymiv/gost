@@ -24,6 +24,7 @@ type WebClient struct {
 	Close          bool
 	Host           string
 	WebServerAddr2 *url.URL
+
 	// the client UserAgent string
 	UserAgent string
 
@@ -132,13 +133,13 @@ func (self *WebClient) addHeaders(req *http.Request, headers map[string]string) 
 }
 
 func (self *WebClient) Request(method string, urlpath string, body io.Reader) (req *http.Request) {
-	if self.WebServerAddr2 != nil {
-		if u, err := self.WebServerAddr2.Parse(urlpath); err != nil {
-			log.Fatal(err)
-		} else {
-			urlpath = u.String()
-		}
-	}
+	// if self.WebServerAddr2 != nil {
+	// 	if u, err := self.WebServerAddr2.Parse(urlpath); err != nil {
+	// 		log.Fatal(err)
+	// 	} else {
+	// 		urlpath = u.String()
+	// 	}
+	// }
 
 	req, err := http.NewRequest(strings.ToUpper(method), urlpath, body)
 	if err != nil {
@@ -154,13 +155,13 @@ func (self *WebClient) Request(method string, urlpath string, body io.Reader) (r
 }
 
 func (self *WebClient) NewRequest(method string, urlpath string, body io.Reader, headers map[string]string) (req *http.Request) {
-	if self.WebServerAddr2 != nil {
-		if u, err := self.WebServerAddr2.Parse(urlpath); err != nil {
-			log.Fatal(err)
-		} else {
-			urlpath = u.String()
-		}
-	}
+	// if self.WebServerAddr2 != nil {
+	// 	if u, err := self.WebServerAddr2.Parse(urlpath); err != nil {
+	// 		log.Fatal(err)
+	// 	} else {
+	// 		urlpath = u.String()
+	// 	}
+	// }
 
 	req, err := http.NewRequest(strings.ToUpper(method), urlpath, body)
 	if err != nil {
@@ -296,15 +297,8 @@ func (c *WebClient) Open(url, sessionId string) (*models.Url, error) {
 
 	defer res.Body.Close()
 
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error on read open body: %v", err)
-	}
-
 	reply := new(struct{ Value string })
-	if err := json.Unmarshal(body, reply); err != nil {
-		return nil, fmt.Errorf("erron on open unmarshal: %v", err)
-	}
+	unmarshalRes(&res.Response, reply)
 
 	return &models.Url{
 		Url: reply.Value,
@@ -322,15 +316,8 @@ func (c *WebClient) FindElement(sessionId string) (*models.Url, error) {
 
 	defer res.Body.Close()
 
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error on read open body: %v", err)
-	}
-
 	reply := new(struct{ Value string })
-	if err := json.Unmarshal(body, reply); err != nil {
-		return nil, fmt.Errorf("erron on open unmarshal: %v", err)
-	}
+	unmarshalRes(&res.Response, reply)
 
 	return &models.Url{
 		Url: reply.Value,
@@ -343,54 +330,32 @@ func (c *WebClient) Status() (*models.DriverStatus, error) {
 		return nil, fmt.Errorf("error on new status request: %v", err)
 	}
 
-	res, err := c.HTTPClient.Do(req)
+	res, err := c.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error on status request: %v", err)
 	}
 
 	defer res.Body.Close()
 
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error on read status body: %v", err)
-	}
-
 	reply := new(struct{ Value models.DriverStatus })
-	if err := json.Unmarshal(body, reply); err != nil {
-		return nil, fmt.Errorf("error on unmarshal status body: %v", err)
-	}
+	unmarshalRes(&res.Response, reply)
 
 	return &reply.Value, nil
 }
 
 func (c *WebClient) Session(caps *capabilities.Capabilities) (*models.Session, error) {
-	data, err := json.Marshal(caps)
-	if err != nil {
-		return nil, fmt.Errorf("error on new driver marshal caps: %v", err)
-	}
+	data := marshalData(caps)
 
 	url := fmt.Sprintf("%s/session", c.WebConfig.WebServerAddr)
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(data))
-	if err != nil {
-		return nil, fmt.Errorf("error on new request: %v", err)
-	}
-
-	res, err := c.HTTPClient.Do(req)
+	res, err := c.Post(url, bytes.NewBuffer(data))
 	if err != nil {
 		return nil, fmt.Errorf("error on session request: %v", err)
 	}
 
 	defer res.Body.Close()
 
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error on read session body: %v", err)
-	}
-
 	reply := new(struct{ Value models.Session })
-	if err := json.Unmarshal(body, reply); err != nil {
-		return nil, fmt.Errorf("erron on session unmarshal: %v", err)
-	}
+	unmarshalRes(&res.Response, reply)
 
 	return &models.Session{
 		Id: reply.Value.Id,
