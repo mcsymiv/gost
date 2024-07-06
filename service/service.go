@@ -65,20 +65,88 @@ func Handler() http.Handler {
 		conf: config.Config,
 	}
 
-	sm.HandleFunc("GET /hello", wd.Hello())
-	sm.HandleFunc("GET /status", wd.DriverStatus())
-	sm.HandleFunc("POST /session", wd.CreateSession())
-	sm.HandleFunc("DELETE /session", wd.Quit())
-	sm.HandleFunc("POST /session/{sessionId}/url", wd.Url())
-	sm.HandleFunc("POST /session/{sessionId}/element", wd.FindElement())
+	sm.HandleFunc("GET /hello", wd.get())
+	sm.HandleFunc("GET /status", wd.get())
+	sm.HandleFunc("POST /session", wd.post())
+	sm.HandleFunc("DELETE /session", wd.delete())
+	sm.HandleFunc("POST /session/{sessionId}/url", wd.post())
+	sm.HandleFunc("POST /session/{sessionId}/element", wd.post())
 
 	return sm
+}
+
+func (wd *WebDriverHandler) post() func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		url := fmt.Sprintf("%s%s", wd.conf.WebDriverAddr, r.URL.Path)
+		data, err := io.ReadAll(r.Body)
+		if err != nil {
+			json.NewEncoder(w).Encode(fmt.Errorf("error on read post request body: %v", err))
+			return
+		}
+
+		res, err := http.Post(url, config.ApplicationJson, bytes.NewBuffer(data))
+		if err != nil {
+			json.NewEncoder(w).Encode(fmt.Errorf("error on post request: %v", err))
+			return
+		}
+
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			json.NewEncoder(w).Encode(fmt.Errorf("error on read post response: %v", err))
+			return
+		}
+
+		w.Header().Set(config.ContenType, config.ApplicationJson)
+		w.Write(body)
+	}
+}
+
+func (wd *WebDriverHandler) get() func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		url := fmt.Sprintf("%s%s", wd.conf.WebDriverAddr, r.URL.Path)
+		res, err := http.Get(url)
+		if err != nil {
+			return
+		}
+
+		data, err := io.ReadAll(res.Body)
+		if err != nil {
+			json.NewEncoder(w).Encode(fmt.Errorf("error on get response: %v", err))
+			return
+		}
+
+		w.Header().Set(config.ContenType, config.ApplicationJson)
+		w.Write(data)
+	}
+}
+
+func (wd *WebDriverHandler) delete() func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		url := fmt.Sprintf("%s%s", wd.conf.WebDriverAddr, r.URL.Path)
+		wdReq, err := http.NewRequest(http.MethodDelete, url, nil)
+		if err != nil {
+			return
+		}
+
+		res, err := http.DefaultClient.Do(wdReq)
+		if err != nil {
+			return
+		}
+
+		data, err := io.ReadAll(res.Body)
+		if err != nil {
+			json.NewEncoder(w).Encode(fmt.Errorf("error on read session response: %v", err))
+			return
+		}
+
+		w.Header().Set(config.ContenType, config.ApplicationJson)
+		w.Write(data)
+	}
 }
 
 func (wd *WebDriverHandler) Url() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		url := fmt.Sprintf("%s%s", wd.conf.WebDriverAddr, r.URL.Path)
-		fmt.Println(url)
 		data, err := io.ReadAll(r.Body)
 		if err != nil {
 			json.NewEncoder(w).Encode(fmt.Errorf("error on read session request body: %v", err))

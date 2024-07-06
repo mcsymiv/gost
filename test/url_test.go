@@ -3,7 +3,6 @@ package test
 import (
 	"context"
 	"fmt"
-	"log"
 	"testing"
 	"time"
 
@@ -19,18 +18,19 @@ func setup_url() func() {
 	srv := service.NewServer(routes)
 
 	go func() {
-		if err := srv.Server.ListenAndServe(); err != nil {
+		if err := srv.Server.ListenAndServe(); err != nil && err.Error() != "http: Server closed" {
 			panic(fmt.Sprintf("could not start server: %v", err))
 		}
 	}()
 
 	return func() {
-		shutdownCtx, shutdownRelease := context.WithTimeout(context.Background(), 10*time.Second)
+		shutdownCtx, shutdownRelease := context.WithTimeout(context.Background(), 2*time.Second)
 		defer shutdownRelease()
 
 		if err := srv.Server.Shutdown(shutdownCtx); err != nil {
-			log.Fatalf("HTTP shutdown error: %v", err)
+			panic(fmt.Sprintf("HTTP shutdown error: %v", err))
 		}
+		fmt.Println("Graceful shutdown complete")
 	}
 }
 
@@ -40,4 +40,5 @@ func TestUrl(t *testing.T) {
 
 	wd := driver.Driver()
 	wd.Open("https://google.com")
+	time.Sleep(5 * time.Second)
 }

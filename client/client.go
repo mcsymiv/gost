@@ -272,15 +272,13 @@ func (self *WebClient) Delete(path string) (*HttpResponse, error) {
 func (c *WebClient) Url(url string) (*models.Url, error) {
 	data := marshalData(map[string]string{"url": url})
 	u := fmt.Sprintf("%s/url", c.WebConfig.WebServerAddr)
-	req, _ := http.NewRequest(http.MethodPost, u, bytes.NewBuffer(data))
-	// res, err := c.Post(fmt.Sprintf("%s/url", c.WebConfig.WebServerAddr), bytes.NewBuffer(data))
-	res, err := c.HTTPClient.Do(req)
+	res, err := c.Post(u, bytes.NewBuffer(data))
 	if err != nil {
 		return nil, fmt.Errorf("error on url request: %v", err)
 	}
 
 	reply := new(struct{ Value string })
-	unmarshalRes(res, reply)
+	unmarshalRes(&res.Response, reply)
 
 	return &models.Url{
 		Url: reply.Value,
