@@ -94,6 +94,13 @@ func (w *WebDriver) Open(u string) string {
 	return url.Url
 }
 
+func (w *WebDriver) Quit() {
+	err := w.WebClient.Quit(w.SessionId)
+	if err != nil {
+		panic(fmt.Sprintf("error on open: %v", err))
+	}
+}
+
 func (w *WebDriver) FindElement(selector string) *WebElement {
 
 	return &WebElement{}

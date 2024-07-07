@@ -361,3 +361,14 @@ func (c *WebClient) Session(caps *capabilities.Capabilities) (*models.Session, e
 		Id: reply.Value.Id,
 	}, nil
 }
+
+func (c *WebClient) Quit(sessionId string) error {
+	url := fmt.Sprintf("%s/session/%s", c.WebConfig.WebServerAddr, sessionId)
+	res, err := c.Delete(url)
+	if err != nil {
+		return fmt.Errorf("error on delete session request: %v", err)
+	}
+
+	defer res.Body.Close()
+	return nil
+}

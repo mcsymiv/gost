@@ -12,6 +12,7 @@ import (
 
 var GeckoDriverPath string = "geckodriver"
 var ChromeDriverPath string = "chromedriver"
+var OutFileLogs *os.File
 
 func Cmd(caps *capabilities.Capabilities, conf *config.WebConfig) (*exec.Cmd, error) {
 	// returns command arguments for specified driver to start from shell
@@ -20,7 +21,8 @@ func Cmd(caps *capabilities.Capabilities, conf *config.WebConfig) (*exec.Cmd, er
 	// previously used line to start driver
 	// cmd := exec.Command("zsh", "-c", GeckoDriverrequest, "--port", "4444", ">", "logs/gecko.session.logs", "2>&1", "&")
 	// open the out file for writing
-	OutFileLogs, err := os.Create(os.Getenv("DRIVER_LOGS"))
+	var err error
+	OutFileLogs, err = os.Create(os.Getenv("DRIVER_LOGS"))
 	if err != nil {
 		panic(fmt.Sprintf("failed to start driver service: %v", err))
 	}

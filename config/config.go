@@ -16,35 +16,35 @@ const ApplicationJson string = "application/json"
 const ContenType string = "Content-Type"
 
 type WebConfig struct {
-	WebServerAddr string
-	WebDriverAddr string
+	WebServerAddr  string
+	WebDriverAddr  string
+	DriverLogsFile string
 }
 
 type ConfigFunc func(*WebConfig)
 
 func DefaultConfig() *WebConfig {
 	return &WebConfig{
-		WebServerAddr: "http://localhost:8080",
-		WebDriverAddr: "http://localhost:4444",
+		WebServerAddr:  "http://localhost:8080",
+		WebDriverAddr:  "http://localhost:4444",
+		DriverLogsFile: "../driver.logs",
 	}
 }
 
 func NewConfig(confFn ...ConfigFunc) *WebConfig {
 	var conf *WebConfig
 
-	err := loadEnv("../config", ".env")
+	err := loadEnv("../", ".env")
 	if err != nil {
 		conf = DefaultConfig()
-		for _, fn := range confFn {
-			fn(conf)
-		}
 
 		return conf
 	}
 
 	conf = &WebConfig{
-		WebServerAddr: fmt.Sprintf("%s:%s", os.Getenv("SERVER_HOST"), os.Getenv("SERVER_PORT")),
-		WebDriverAddr: fmt.Sprintf("%s:%s", os.Getenv("DRIVER_HOST"), os.Getenv("DRIVER_PORT")),
+		WebServerAddr:  fmt.Sprintf("%s:%s", os.Getenv("SERVER_HOST"), os.Getenv("SERVER_PORT")),
+		WebDriverAddr:  fmt.Sprintf("%s:%s", os.Getenv("DRIVER_HOST"), os.Getenv("DRIVER_PORT")),
+		DriverLogsFile: os.Getenv("DRIVER_LOGS"),
 	}
 
 	return conf
