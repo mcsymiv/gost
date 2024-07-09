@@ -16,7 +16,23 @@ import (
 
 	"github.com/mcsymiv/gost/capabilities"
 	"github.com/mcsymiv/gost/config"
-	"github.com/mcsymiv/gost/models"
+	"github.com/mcsymiv/gost/data"
+)
+
+const (
+	// LegacyWebElementIdentifier is the string constant used in the old Selenium 2 protocol
+	// WebDriver JSON protocol that is the key for the map that contains an
+	// unique element identifier.
+	// This value is ignored in element id retreival
+	LegacyWebElementIdentifier = "ELEMENT"
+
+	// WebElementIdentifier is the string constant defined by the W3C Selenium 3 protocol
+	// specification that is the key for the map that contains a unique element identifier.
+	WebElementIdentifier = "element-6066-11e4-a52e-4f735466cecf"
+
+	// ShadowRootIdentifier A shadow root is an abstraction used to identify a shadow root when
+	// it is transported via the protocol, between remote and local ends.
+	ShadowRootIdentifier = "shadow-6066-11e4-a52e-4f735466cecf"
 )
 
 // RestClient represents a REST client configuration.
@@ -102,6 +118,28 @@ func unmarshalRes(res *http.Response, any interface{}) error {
 
 type HttpResponse struct {
 	http.Response
+}
+
+func ElementID(v map[string]string) string {
+	id, ok := v[WebElementIdentifier]
+	if !ok || id == "" {
+		panic(fmt.Sprintf("Error on find element: %v", v))
+	}
+	return id
+}
+
+func ElementsID(v []map[string]string) []string {
+	var els []string
+
+	for _, el := range v {
+		id, ok := el[WebElementIdentifier]
+		if !ok || id == "" {
+			panic(fmt.Sprintf("Error on find elements: %v", v))
+		}
+		els = append(els, id)
+	}
+
+	return els
 }
 
 func (self *WebClient) addHeaders(req *http.Request, headers map[string]string) {
@@ -270,10 +308,10 @@ func (self *WebClient) Delete(path string) (*HttpResponse, error) {
 	return self.Do(req)
 }
 
-func (c *WebClient) Url(url string) (*models.Url, error) {
-	data := marshalData(map[string]string{"url": url})
+func (c *WebClient) Url(url string) (*data.Url, error) {
+	b := marshalData(map[string]string{"url": url})
 	u := fmt.Sprintf("%s/url", c.WebConfig.WebServerAddr)
-	res, err := c.Post(u, bytes.NewBuffer(data))
+	res, err := c.Post(u, bytes.NewBuffer(b))
 	if err != nil {
 		return nil, fmt.Errorf("error on url request: %v", err)
 	}
@@ -281,16 +319,16 @@ func (c *WebClient) Url(url string) (*models.Url, error) {
 	reply := new(struct{ Value string })
 	unmarshalRes(&res.Response, reply)
 
-	return &models.Url{
+	return &data.Url{
 		Url: reply.Value,
 	}, nil
 }
 
-func (c *WebClient) Open(url, sessionId string) (*models.Url, error) {
-	data := marshalData(map[string]string{"url": url})
+func (c *WebClient) Open(url, sessionId string) (*data.Url, error) {
+	b := marshalData(map[string]string{"url": url})
 	p := fmt.Sprintf("%s/session/%s/url", c.WebConfig.WebServerAddr, sessionId)
 
-	res, err := c.Post(p, bytes.NewBuffer(data))
+	res, err := c.Post(p, bytes.NewBuffer(b))
 	if err != nil {
 		return nil, fmt.Errorf("error on open request: %v", err)
 	}
@@ -300,31 +338,36 @@ func (c *WebClient) Open(url, sessionId string) (*models.Url, error) {
 	reply := new(struct{ Value string })
 	unmarshalRes(&res.Response, reply)
 
-	return &models.Url{
+	return &data.Url{
 		Url: reply.Value,
 	}, nil
 }
 
-func (c *WebClient) FindElement(sessionId string) (*models.Url, error) {
-	data := marshalData(map[string]string{"url": ""})
-	p := fmt.Sprintf("%s/session/%s/url", c.WebConfig.WebServerAddr, sessionId)
+func (c *WebClient) FindElement(selector *data.Selector, sessionId string) (*data.WebElement, error) {
+	body := marshalData(&data.JsonFindUsing{
+		Using: selector.Using,
+		Value: selector.Value,
+	})
 
-	res, err := c.Post(p, bytes.NewBuffer(data))
+	p := fmt.Sprintf("%s/session/%s/element", c.WebConfig.WebServerAddr, sessionId)
+	res, err := c.Post(p, bytes.NewBuffer(body))
 	if err != nil {
-		return nil, fmt.Errorf("error on open request: %v", err)
+		return nil, fmt.Errorf("error on find element request: %v", err)
 	}
 
 	defer res.Body.Close()
 
-	reply := new(struct{ Value string })
+	reply := new(struct{ Value map[string]string })
 	unmarshalRes(&res.Response, reply)
+	eId := ElementID(reply.Value)
 
-	return &models.Url{
-		Url: reply.Value,
+	return &data.WebElement{
+		Id:       eId,
+		Selector: selector,
 	}, nil
 }
 
-func (c *WebClient) Status() (*models.DriverStatus, error) {
+func (c *WebClient) Status() (*data.DriverStatus, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/status", c.WebConfig.WebServerAddr), nil)
 	if err != nil {
 		return nil, fmt.Errorf("error on new status request: %v", err)
@@ -337,27 +380,27 @@ func (c *WebClient) Status() (*models.DriverStatus, error) {
 
 	defer res.Body.Close()
 
-	reply := new(struct{ Value models.DriverStatus })
+	reply := new(struct{ Value data.DriverStatus })
 	unmarshalRes(&res.Response, reply)
 
 	return &reply.Value, nil
 }
 
-func (c *WebClient) Session(caps *capabilities.Capabilities) (*models.Session, error) {
-	data := marshalData(caps)
+func (c *WebClient) Session(caps *capabilities.Capabilities) (*data.Session, error) {
+	d := marshalData(caps)
 
 	url := fmt.Sprintf("%s/session", c.WebConfig.WebServerAddr)
-	res, err := c.Post(url, bytes.NewBuffer(data))
+	res, err := c.Post(url, bytes.NewBuffer(d))
 	if err != nil {
 		return nil, fmt.Errorf("error on session request: %v", err)
 	}
 
 	defer res.Body.Close()
 
-	reply := new(struct{ Value models.Session })
+	reply := new(struct{ Value data.Session })
 	unmarshalRes(&res.Response, reply)
 
-	return &models.Session{
+	return &data.Session{
 		Id: reply.Value.Id,
 	}, nil
 }

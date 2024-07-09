@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"time"
 
 	"github.com/mcsymiv/gost/config"
 )
@@ -24,19 +26,12 @@ func NewServer(h http.Handler) *WebServer {
 	}
 }
 
-func Recoverer(next http.Handler) http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			if rvr := recover(); rvr != nil && rvr != http.ErrAbortHandler {
-
-				w.WriteHeader(http.StatusInternalServerError)
-			}
-		}()
-
+func logging(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
 		next.ServeHTTP(w, r)
-	}
-
-	return http.HandlerFunc(fn)
+		log.Printf("%s %s %s", r.Method, r.RequestURI, time.Since(start))
+	})
 }
 
 func Retry(next http.Handler) http.Handler {
@@ -55,27 +50,127 @@ func Retry(next http.Handler) http.Handler {
 }
 
 type WebDriverHandler struct {
-	conf *config.WebConfig
+	conf   *config.WebConfig
+	client *http.Client
 }
 
 func Handler() http.Handler {
 	sm := http.NewServeMux()
 
 	wd := &WebDriverHandler{
-		conf: config.Config,
+		conf:   config.Config,
+		client: &http.Client{},
 	}
 
 	sm.HandleFunc("GET /hello", wd.get())
-	sm.HandleFunc("GET /status", wd.get())
+	sm.Handle("GET /status", logging(http.HandlerFunc(wd.get())))
 	sm.HandleFunc("POST /session", wd.post())
 	sm.HandleFunc("DELETE /session/{sessionId}", wd.delete())
 	sm.HandleFunc("POST /session/{sessionId}/url", wd.post())
-	sm.HandleFunc("POST /session/{sessionId}/element", wd.post())
+	// sm.HandleFunc("POST /session/{sessionId}/element", wd.post())
+	sm.Handle("POST /session/{sessionId}/element", wd.retryPost(wd.post(), new(struct{ Value map[string]string })))
 
 	return sm
 }
 
-func (wd *WebDriverHandler) post() func(http.ResponseWriter, *http.Request) {
+func verify(res *http.Response, b interface{}) bool {
+	if res.StatusCode == http.StatusOK {
+		// err := json.NewDecoder(res.Body).Decode(b)
+		// if err != nil {
+		// 	log.Println("error on json NewDecoder")
+		// 	res.Body.Close()
+		// 	panic(err)
+		// }
+
+		// res.Body.Close()
+		return true
+	}
+
+	return false
+}
+
+func (wd *WebDriverHandler) retryPost(next http.Handler, b interface{}) http.Handler {
+
+	var res *http.Response
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		url := fmt.Sprintf("%s%s", wd.conf.WebDriverAddr, r.URL.Path)
+		data, err := io.ReadAll(r.Body)
+		if err != nil {
+			json.NewEncoder(w).Encode(fmt.Errorf("error on read post request body: %v", err))
+		}
+		start := time.Now()
+		end := start.Add(30 * time.Second)
+
+		for {
+			req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(data))
+			if err != nil {
+				fmt.Println("error on NewRequest")
+				req.Body.Close()
+				panic(err)
+			}
+
+			res, err = wd.client.Do(req)
+			if err != nil {
+				fmt.Println("error on Client Do Request")
+				res.Body.Close()
+				panic(err)
+			}
+
+			// strategy for strategy
+			// "verified" response will return true
+			// and break out of the loop
+			if verify(res, b) {
+				break
+			}
+
+			// close res res.Body if not verified
+			// i.e. loopStrategyRequest returns false
+			res.Body.Close()
+
+			if time.Now().After(end) {
+				log.Println("timeout")
+				// if config.TestSetting.ScreenshotOnFail {
+				if wd.conf.ScreenshotOnFail {
+					fmt.Println("screnshot")
+					// d.Screenshot()
+				}
+
+				break
+			}
+
+			time.Sleep(300 * time.Millisecond)
+			fmt.Println("retry find element")
+		}
+
+		// url := fmt.Sprintf("%s%s", wd.conf.WebDriverAddr, r.URL.Path)
+		// data, err := io.ReadAll(r.Body)
+		// if err != nil {
+		// 	json.NewEncoder(w).Encode(fmt.Errorf("error on read post request body: %v", err))
+		// }
+		//
+		// res, err := http.Post(url, config.ApplicationJson, bytes.NewBuffer(data))
+		// if err != nil {
+		// 	json.NewEncoder(w).Encode(fmt.Errorf("error on post request: %v", err))
+		// 	return
+		// }
+
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			json.NewEncoder(w).Encode(fmt.Errorf("error on read post response: %v", err))
+			return
+		}
+
+		defer res.Body.Close()
+
+		w.Header().Set(config.ContenType, config.ApplicationJson)
+		w.Write(body)
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (wd *WebDriverHandler) post() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		url := fmt.Sprintf("%s%s", wd.conf.WebDriverAddr, r.URL.Path)
 		data, err := io.ReadAll(r.Body)
@@ -102,7 +197,7 @@ func (wd *WebDriverHandler) post() func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func (wd *WebDriverHandler) get() func(http.ResponseWriter, *http.Request) {
+func (wd *WebDriverHandler) get() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		url := fmt.Sprintf("%s%s", wd.conf.WebDriverAddr, r.URL.Path)
 		res, err := http.Get(url)
@@ -122,7 +217,37 @@ func (wd *WebDriverHandler) get() func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func (wd *WebDriverHandler) delete() func(http.ResponseWriter, *http.Request) {
+func (wd *WebDriverHandler) get3(w http.ResponseWriter, r *http.Request) ([]byte, error) {
+	url := fmt.Sprintf("%s%s", wd.conf.WebDriverAddr, r.URL.Path)
+	res, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := io.ReadAll(res.Body)
+	if err != nil {
+		json.NewEncoder(w).Encode(fmt.Errorf("error on get response: %v", err))
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	return data, nil
+}
+
+func (wd *WebDriverHandler) get2() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		data, err := wd.get3(w, r)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		w.Header().Set(config.ContenType, config.ApplicationJson)
+		w.Write(data)
+	}
+}
+
+func (wd *WebDriverHandler) delete() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		url := fmt.Sprintf("%s%s", wd.conf.WebDriverAddr, r.URL.Path)
 		wdReq, err := http.NewRequest(http.MethodDelete, url, nil)

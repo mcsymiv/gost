@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -16,18 +17,20 @@ const ApplicationJson string = "application/json"
 const ContenType string = "Content-Type"
 
 type WebConfig struct {
-	WebServerAddr  string
-	WebDriverAddr  string
-	DriverLogsFile string
+	WebServerAddr    string
+	WebDriverAddr    string
+	DriverLogsFile   string
+	ScreenshotOnFail bool
 }
 
 type ConfigFunc func(*WebConfig)
 
 func DefaultConfig() *WebConfig {
 	return &WebConfig{
-		WebServerAddr:  "http://localhost:8080",
-		WebDriverAddr:  "http://localhost:4444",
-		DriverLogsFile: "../driver.logs",
+		WebServerAddr:    "http://localhost:8080",
+		WebDriverAddr:    "http://localhost:4444",
+		DriverLogsFile:   "../driver.logs",
+		ScreenshotOnFail: true,
 	}
 }
 
@@ -59,6 +62,19 @@ func WebConfigServerAddr(addr string) ConfigFunc {
 func WebConfigDriverAddr(addr string) ConfigFunc {
 	return func(conf *WebConfig) {
 		conf.WebDriverAddr = addr
+	}
+}
+
+func WebConfigDriverScreenshoOnFail(onFail string) ConfigFunc {
+	var screenshotOnFail bool
+	f, err := strconv.ParseBool(onFail)
+	if err != nil {
+		screenshotOnFail = true
+	}
+
+	screenshotOnFail = f
+	return func(conf *WebConfig) {
+		conf.ScreenshotOnFail = screenshotOnFail
 	}
 }
 

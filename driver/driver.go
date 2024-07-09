@@ -8,6 +8,7 @@ import (
 	"github.com/mcsymiv/gost/client"
 	"github.com/mcsymiv/gost/command"
 	"github.com/mcsymiv/gost/config"
+	"github.com/mcsymiv/gost/data"
 )
 
 type WebDriver struct {
@@ -101,7 +102,19 @@ func (w *WebDriver) Quit() {
 	}
 }
 
-func (w *WebDriver) FindElement(selector string) *WebElement {
+func (w *WebDriver) FindElement(selector *data.Selector) *data.WebElement {
+	el, err := w.WebClient.FindElement(selector, w.SessionId)
+	if err != nil {
+		panic(fmt.Sprintf("error on open: %v", err))
+	}
+	return el
+}
 
-	return &WebElement{}
+func (w *WebDriver) F(s string) *data.WebElement {
+	selector := Strategy(s)
+	el, err := w.WebClient.FindElement(selector, w.SessionId)
+	if err != nil {
+		panic(fmt.Sprintf("error on open: %v", err))
+	}
+	return el
 }

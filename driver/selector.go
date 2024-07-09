@@ -2,21 +2,9 @@ package driver
 
 import (
 	"fmt"
-)
 
-// w3c Locator strategies
-// src: https://www.w3.org/TR/webdriver2/#locator-strategies
-const (
-	ByXPath           = "xpath"
-	ByLinkText        = "link text"
-	ByPartialLinkText = "partial link text"
-	ByTagName         = "tag name"
-	ByCssSelector     = "css selector"
+	"github.com/mcsymiv/gost/data"
 )
-
-type Selector struct {
-	Using, Value string
-}
 
 // checkSubstrings
 // wrapper around strings.Contains
@@ -50,22 +38,22 @@ type Selector struct {
 // text:
 // as final option, if selector does not contain /, [ symbols
 // XPathTextStrategy will be used
-func Strategy(value string) Selector {
-	var s Selector
+func Strategy(value string) *data.Selector {
+	var s *data.Selector = &data.Selector{}
 	s.Value = value
 
 	if value[0] == '/' || value[1] == '/' {
-		s.Using = ByXPath
+		s.Using = data.ByXPath
 		return s
 	}
 
 	// if ok, m := checkSubstrings(value, ".", "#", "[", "]"); ok || m > 0 {
 	if value[0] == '[' {
-		s.Using = ByCssSelector
+		s.Using = data.ByCssSelector
 		return s
 	}
 
-	s.Using = ByXPath
+	s.Using = data.ByXPath
 	s.Value = fmt.Sprintf("//*[text()='%[1]s'] | //*[@placeholder='%[1]s'] | //*[@value='%[1]s']", value)
 
 	return s
@@ -76,17 +64,16 @@ func Strategy(value string) Selector {
 // *[text()='%[1]s']
 // *[@placeholder='%[1]s']
 // *[@value='%[1]s']
-func xPathTextStrategy(value string) Selector {
-	return Selector{
-		Using: ByXPath,
+func xPathTextStrategy(value string) *data.Selector {
+	return &data.Selector{
+		Using: data.ByXPath,
 		Value: fmt.Sprintf("//*[text()='%[1]s'] | //*[@placeholder='%[1]s'] | //*[@value='%[1]s']", value),
 	}
 }
 
-func Css(value string) Selector {
-	return Selector{
-		Using: ByCssSelector,
+func Css(value string) *data.Selector {
+	return &data.Selector{
+		Using: data.ByCssSelector,
 		Value: value,
 	}
 }
-
