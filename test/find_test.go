@@ -14,6 +14,7 @@ import (
 
 func startDriverFind(capsFn ...capabilities.CapabilitiesFunc) (*driver.WebDriver, func()) {
 	d := driver.Driver()
+	// setup
 	return d, func() {
 		// teardown
 		d.Quit()
@@ -58,5 +59,5 @@ func TestFind(t *testing.T) {
 		t.Fail()
 	}
 
-	fmt.Println(el.Id)
+	fmt.Println(el.WebElementId)
 }

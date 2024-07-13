@@ -11,11 +11,19 @@ import (
 	"github.com/mcsymiv/gost/data"
 )
 
+type Element interface{}
+
 type WebDriver struct {
 	Command      *exec.Cmd
 	WebClient    *client.WebClient
 	Capabilities *capabilities.Capabilities
 	SessionId    string
+}
+
+type WebElement struct {
+	WebDriver
+	WebElementId       string
+	WebElementSelector *data.Selector
 }
 
 func NewDriver(capsFn ...capabilities.CapabilitiesFunc) *WebDriver {
@@ -102,19 +110,34 @@ func (w *WebDriver) Quit() {
 	}
 }
 
-func (w *WebDriver) FindElement(selector *data.Selector) *data.WebElement {
-	el, err := w.WebClient.FindElement(selector, w.SessionId)
+func (w *WebDriver) FindElement(selector *data.Selector) *WebElement {
+	eId, err := w.WebClient.FindElement(selector, w.SessionId)
 	if err != nil {
 		panic(fmt.Sprintf("error on open: %v", err))
 	}
-	return el
+
+	return &WebElement{
+		WebElementId: eId,
+	}
 }
 
-func (w *WebDriver) F(s string) *data.WebElement {
+func (w *WebDriver) F(s string) *WebElement {
 	selector := Strategy(s)
-	el, err := w.WebClient.FindElement(selector, w.SessionId)
+	eId, err := w.WebClient.FindElement(selector, w.SessionId)
 	if err != nil {
 		panic(fmt.Sprintf("error on open: %v", err))
 	}
-	return el
+
+	return &WebElement{
+		WebElementId: eId,
+	}
+}
+
+func (w *WebElement) IsDisplayed() bool {
+	ok, err := w.WebClient.IsDisplayed(w.SessionId, w.WebElementId)
+	if err != nil {
+		panic(fmt.Sprintf("error on open: %v", err))
+	}
+
+	return ok
 }

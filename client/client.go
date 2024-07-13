@@ -343,7 +343,7 @@ func (c *WebClient) Open(url, sessionId string) (*data.Url, error) {
 	}, nil
 }
 
-func (c *WebClient) FindElement(selector *data.Selector, sessionId string) (*data.WebElement, error) {
+func (c *WebClient) FindElement(selector *data.Selector, sessionId string) (string, error) {
 	body := marshalData(&data.JsonFindUsing{
 		Using: selector.Using,
 		Value: selector.Value,
@@ -352,7 +352,7 @@ func (c *WebClient) FindElement(selector *data.Selector, sessionId string) (*dat
 	p := fmt.Sprintf("%s/session/%s/element", c.WebConfig.WebServerAddr, sessionId)
 	res, err := c.Post(p, bytes.NewBuffer(body))
 	if err != nil {
-		return nil, fmt.Errorf("error on find element request: %v", err)
+		return "", fmt.Errorf("error on find element request: %v", err)
 	}
 
 	defer res.Body.Close()
@@ -361,10 +361,7 @@ func (c *WebClient) FindElement(selector *data.Selector, sessionId string) (*dat
 	unmarshalRes(&res.Response, reply)
 	eId := ElementID(reply.Value)
 
-	return &data.WebElement{
-		Id:       eId,
-		Selector: selector,
-	}, nil
+	return eId, nil
 }
 
 func (c *WebClient) Status() (*data.DriverStatus, error) {
@@ -414,4 +411,19 @@ func (c *WebClient) Quit(sessionId string) error {
 
 	defer res.Body.Close()
 	return nil
+}
+
+func (c *WebClient) IsDisplayed(sessionId, elementId string) (bool, error) {
+	p := fmt.Sprintf("%s/session/%s/element/%s/displayed", c.WebConfig.WebServerAddr, sessionId, elementId)
+	res, err := c.Get(p)
+	if err != nil {
+		return false, fmt.Errorf("error on find element request: %v", err)
+	}
+
+	defer res.Body.Close()
+
+	reply := new(struct{ Value bool })
+	unmarshalRes(&res.Response, reply)
+
+	return reply.Value, nil
 }

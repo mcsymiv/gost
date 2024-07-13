@@ -9,7 +9,7 @@ import (
 	"github.com/mcsymiv/gost/service"
 )
 
-func setup() chan *client.WebClient {
+func setup_status() chan *client.WebClient {
 	ch := make(chan *client.WebClient)
 	config.Config = config.NewConfig()
 
@@ -28,7 +28,7 @@ func setup() chan *client.WebClient {
 }
 
 func TestStatus(t *testing.T) {
-	ch := setup()
+	ch := setup_status()
 	cl := <-ch
 	st, _ := cl.Status()
 

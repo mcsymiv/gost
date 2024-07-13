@@ -13,10 +13,7 @@ type Url struct {
 	Url string `json:"url"`
 }
 
-type WebElement struct {
-	Id string
-	*Selector
-}
+
 type JsonFindUsing struct {
 	Using string `json:"using"`
 	Value string `json:"value"`
