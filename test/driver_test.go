@@ -78,7 +78,7 @@ func TestDriver(t *testing.T) {
 	d.Url(fmt.Sprintf("%s%s", host, "/login.html"))
 	time.Sleep(5 * time.Second)
 	d.F("Log in using Azure Active Directory").Click()
-	// d.F("[aria-label^='Ending with']").Key(os.Getenv("DOWNLOAD_LOGIN")).Key(driver.EnterKey)
+	d.F("[aria-label^='Ending with']").Key(os.Getenv("DOWNLOAD_LOGIN")).Key(driver.EnterKey)
 	// d.F("[aria-label^='Enter the password']").Key(os.Getenv("DOWNLOAD_PASS")).Key(driver.EnterKey)
 	// d.F("Yes").Click()
 	// d.F("Projects").Click()

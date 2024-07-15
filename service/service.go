@@ -71,6 +71,7 @@ func Handler() http.Handler {
 	// TODO: add display_test
 	sm.Handle("GET /session/{sessionId}/element/{elementId}/displayed", wd.retry(&verifyDisplay{http.MethodGet}, wd.get(), new(struct{ Value bool })))
 	sm.HandleFunc("POST /session/{sessionId}/element/{elementId}/click", wd.post())
+	sm.HandleFunc("POST /session/{sessionId}/element/{elementId}/value", wd.post())
 
 	return sm
 }

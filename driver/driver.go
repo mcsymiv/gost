@@ -151,3 +151,12 @@ func (w *WebElement) Click() *WebElement {
 
 	return w
 }
+
+func (w *WebElement) Keys(keys string) *WebElement {
+	err := w.WebClient.Keys(keys, w.SessionId, w.WebElementId)
+	if err != nil {
+		panic(fmt.Sprintf("error on click: %v", err))
+	}
+
+	return w
+}

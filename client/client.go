@@ -26,6 +26,7 @@ const (
 	findElementEndpoint = "%s/session/%s/element"
 	isDisplayedEndpoint = "%s/session/%s/element/%s/displayed"
 	clickEndpoint       = "%s/session/%s/element/%s/click"
+	sendKeysEndpoint    = "%s/session/%s/element/%s/value"
 )
 
 const (
@@ -423,6 +424,21 @@ func (c *WebClient) IsDisplayed(sessionId, elementId string) (bool, error) {
 func (c *WebClient) Click(sessionId, elementId string) error {
 	p := fmt.Sprintf(clickEndpoint, c.WebConfig.WebServerAddr, sessionId, elementId)
 	d := marshalData(data.Empty{})
+	res, err := c.Post(p, bytes.NewBuffer(d))
+	if err != nil {
+		return fmt.Errorf("error on click request: %v", err)
+	}
+
+	defer res.Body.Close()
+
+	return nil
+}
+
+func (c *WebClient) Keys(keys, sessionId, elementId string) error {
+	p := fmt.Sprintf(sendKeysEndpoint, c.WebConfig.WebServerAddr, sessionId, elementId)
+	d := marshalData(data.SendKeys{
+		Text: keys,
+	})
 	res, err := c.Post(p, bytes.NewBuffer(d))
 	if err != nil {
 		return fmt.Errorf("error on click request: %v", err)

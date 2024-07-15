@@ -12,7 +12,7 @@ import (
 	"github.com/mcsymiv/gost/service"
 )
 
-func start_click(capsFn ...capabilities.CapabilitiesFunc) (*driver.WebDriver, func()) {
+func start_keys(capsFn ...capabilities.CapabilitiesFunc) (*driver.WebDriver, func()) {
 	d := driver.Driver()
 	// setup
 	return d, func() {
@@ -23,7 +23,7 @@ func start_click(capsFn ...capabilities.CapabilitiesFunc) (*driver.WebDriver, fu
 	}
 }
 
-func setup_click() func() {
+func setup_keys() func() {
 	config.Config = config.NewConfig()
 
 	routes := service.Handler()
@@ -45,23 +45,23 @@ func setup_click() func() {
 	}
 }
 
-func TestClick(t *testing.T) {
-	shutdown := setup_click()
+func TestKeys(t *testing.T) {
+	shutdown := setup_keys()
 	defer shutdown()
 
-	wd, tear := start_click(
+	wd, tear := start_keys(
 		capabilities.MozPrefs("intl.accept_languages", "en-GB"),
 	)
 	defer tear()
 
 	wd.Open("https://google.com")
-	el := wd.F("//*[@id='APjFqb']")
+	el := wd.F("//*[@id='APjFqb']").Click()
 
 	if el == nil {
 		t.Fail()
 	}
 
-	clickedEl := el.Click()
+	clickedEl := el.Keys("hello")
 	if clickedEl == nil {
 		t.Fail()
 	}
@@ -69,4 +69,6 @@ func TestClick(t *testing.T) {
 	if el.WebElementId != clickedEl.WebElementId {
 		t.Fail()
 	}
+
+	fmt.Println(clickedEl.WebElementId)
 }

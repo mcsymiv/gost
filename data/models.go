@@ -13,7 +13,6 @@ type Url struct {
 	Url string `json:"url"`
 }
 
-
 type JsonFindUsing struct {
 	Using string `json:"using"`
 	Value string `json:"value"`
@@ -28,3 +27,7 @@ type Selector struct {
 // "where Geckodriver requires POST requests to have a valid JSON body"
 // Used in POST requests that don't require data to be passed by W3C
 type Empty struct{}
+
+type SendKeys struct {
+	Text string `json:"text"`
+}
