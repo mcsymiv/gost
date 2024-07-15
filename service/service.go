@@ -70,6 +70,7 @@ func Handler() http.Handler {
 	sm.Handle("POST /session/{sessionId}/element", wd.retry(&verifyStatusOk{http.MethodPost}, wd.post()))
 	// TODO: add display_test
 	sm.Handle("GET /session/{sessionId}/element/{elementId}/displayed", wd.retry(&verifyDisplay{http.MethodGet}, wd.get(), new(struct{ Value bool })))
+	sm.HandleFunc("POST /session/{sessionId}/element/{elementId}/click", wd.post())
 
 	return sm
 }
@@ -81,6 +82,7 @@ func (wd *WebDriverHandler) retry(v requestVerifier, next http.Handler, b ...int
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		url := fmt.Sprintf("%s%s", wd.conf.WebDriverAddr, r.URL.Path)
 		data, err := io.ReadAll(r.Body)
+		r.Body = io.NopCloser(bytes.NewReader(data))
 		if err != nil {
 			json.NewEncoder(w).Encode(fmt.Errorf("error on read post request body: %v", err))
 		}

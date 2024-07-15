@@ -20,6 +20,15 @@ import (
 )
 
 const (
+	sessionEndpoint     = "%s/session"
+	quitEndpoint        = "%s/session/%s"
+	urlEndpoint         = "%s/session/%s/url"
+	findElementEndpoint = "%s/session/%s/element"
+	isDisplayedEndpoint = "%s/session/%s/element/%s/displayed"
+	clickEndpoint       = "%s/session/%s/element/%s/click"
+)
+
+const (
 	// LegacyWebElementIdentifier is the string constant used in the old Selenium 2 protocol
 	// WebDriver JSON protocol that is the key for the map that contains an
 	// unique element identifier.
@@ -37,9 +46,8 @@ const (
 
 // RestClient represents a REST client configuration.
 type WebClient struct {
-	Close          bool
-	Host           string
-	WebServerAddr2 *url.URL
+	Close bool
+	Host  string
 
 	// the client UserAgent string
 	UserAgent string
@@ -171,15 +179,7 @@ func (self *WebClient) addHeaders(req *http.Request, headers map[string]string) 
 }
 
 func (self *WebClient) Request(method string, urlpath string, body io.Reader) (req *http.Request) {
-	// if self.WebServerAddr2 != nil {
-	// 	if u, err := self.WebServerAddr2.Parse(urlpath); err != nil {
-	// 		log.Fatal(err)
-	// 	} else {
-	// 		urlpath = u.String()
-	// 	}
-	// }
-
-	req, err := http.NewRequest(strings.ToUpper(method), urlpath, body)
+	req, err := http.NewRequest(method, urlpath, body)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -193,14 +193,6 @@ func (self *WebClient) Request(method string, urlpath string, body io.Reader) (r
 }
 
 func (self *WebClient) NewRequest(method string, urlpath string, body io.Reader, headers map[string]string) (req *http.Request) {
-	// if self.WebServerAddr2 != nil {
-	// 	if u, err := self.WebServerAddr2.Parse(urlpath); err != nil {
-	// 		log.Fatal(err)
-	// 	} else {
-	// 		urlpath = u.String()
-	// 	}
-	// }
-
 	req, err := http.NewRequest(strings.ToUpper(method), urlpath, body)
 	if err != nil {
 		log.Fatal(err)
@@ -289,28 +281,28 @@ func URLWithPathParams(base string, path string, params map[string]interface{}) 
 }
 
 func (self *WebClient) Post(path string, content io.Reader) (*HttpResponse, error) {
-	req := self.Request("POST", path, content)
+	req := self.Request(http.MethodPost, path, content)
 	return self.Do(req)
 }
 
 func (self *WebClient) GetWithParams(path string, params map[string]interface{}) (*HttpResponse, error) {
-	req := self.Request("GET", URLWithParams(path, params).String(), nil)
+	req := self.Request(http.MethodGet, URLWithParams(path, params).String(), nil)
 	return self.Do(req)
 }
 
 func (self *WebClient) Get(path string) (*HttpResponse, error) {
-	req := self.Request("GET", path, nil)
+	req := self.Request(http.MethodGet, path, nil)
 	return self.Do(req)
 }
 
 func (self *WebClient) Delete(path string) (*HttpResponse, error) {
-	req := self.Request("DELETE", path, nil)
+	req := self.Request(http.MethodDelete, path, nil)
 	return self.Do(req)
 }
 
-func (c *WebClient) Url(url string) (*data.Url, error) {
+func (c *WebClient) Url(url, sessionId string) (*data.Url, error) {
 	b := marshalData(map[string]string{"url": url})
-	u := fmt.Sprintf("%s/url", c.WebConfig.WebServerAddr)
+	u := fmt.Sprintf(urlEndpoint, c.WebConfig.WebServerAddr, sessionId)
 	res, err := c.Post(u, bytes.NewBuffer(b))
 	if err != nil {
 		return nil, fmt.Errorf("error on url request: %v", err)
@@ -326,7 +318,7 @@ func (c *WebClient) Url(url string) (*data.Url, error) {
 
 func (c *WebClient) Open(url, sessionId string) (*data.Url, error) {
 	b := marshalData(map[string]string{"url": url})
-	p := fmt.Sprintf("%s/session/%s/url", c.WebConfig.WebServerAddr, sessionId)
+	p := fmt.Sprintf(urlEndpoint, c.WebConfig.WebServerAddr, sessionId)
 
 	res, err := c.Post(p, bytes.NewBuffer(b))
 	if err != nil {
@@ -349,7 +341,7 @@ func (c *WebClient) FindElement(selector *data.Selector, sessionId string) (stri
 		Value: selector.Value,
 	})
 
-	p := fmt.Sprintf("%s/session/%s/element", c.WebConfig.WebServerAddr, sessionId)
+	p := fmt.Sprintf(findElementEndpoint, c.WebConfig.WebServerAddr, sessionId)
 	res, err := c.Post(p, bytes.NewBuffer(body))
 	if err != nil {
 		return "", fmt.Errorf("error on find element request: %v", err)
@@ -386,7 +378,7 @@ func (c *WebClient) Status() (*data.DriverStatus, error) {
 func (c *WebClient) Session(caps *capabilities.Capabilities) (*data.Session, error) {
 	d := marshalData(caps)
 
-	url := fmt.Sprintf("%s/session", c.WebConfig.WebServerAddr)
+	url := fmt.Sprintf(sessionEndpoint, c.WebConfig.WebServerAddr)
 	res, err := c.Post(url, bytes.NewBuffer(d))
 	if err != nil {
 		return nil, fmt.Errorf("error on session request: %v", err)
@@ -403,7 +395,7 @@ func (c *WebClient) Session(caps *capabilities.Capabilities) (*data.Session, err
 }
 
 func (c *WebClient) Quit(sessionId string) error {
-	url := fmt.Sprintf("%s/session/%s", c.WebConfig.WebServerAddr, sessionId)
+	url := fmt.Sprintf(quitEndpoint, c.WebConfig.WebServerAddr, sessionId)
 	res, err := c.Delete(url)
 	if err != nil {
 		return fmt.Errorf("error on delete session request: %v", err)
@@ -414,7 +406,7 @@ func (c *WebClient) Quit(sessionId string) error {
 }
 
 func (c *WebClient) IsDisplayed(sessionId, elementId string) (bool, error) {
-	p := fmt.Sprintf("%s/session/%s/element/%s/displayed", c.WebConfig.WebServerAddr, sessionId, elementId)
+	p := fmt.Sprintf(isDisplayedEndpoint, c.WebConfig.WebServerAddr, sessionId, elementId)
 	res, err := c.Get(p)
 	if err != nil {
 		return false, fmt.Errorf("error on find element request: %v", err)
@@ -426,4 +418,17 @@ func (c *WebClient) IsDisplayed(sessionId, elementId string) (bool, error) {
 	unmarshalRes(&res.Response, reply)
 
 	return reply.Value, nil
+}
+
+func (c *WebClient) Click(sessionId, elementId string) error {
+	p := fmt.Sprintf(clickEndpoint, c.WebConfig.WebServerAddr, sessionId, elementId)
+	d := marshalData(data.Empty{})
+	res, err := c.Post(p, bytes.NewBuffer(d))
+	if err != nil {
+		return fmt.Errorf("error on click request: %v", err)
+	}
+
+	defer res.Body.Close()
+
+	return nil
 }

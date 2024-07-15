@@ -105,7 +105,7 @@ func dotenv(filepath string) error {
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		env := scanner.Text()
-		if env == "" {
+		if env == "" || strings.ContainsRune(env, '#') {
 			continue
 		}
 

@@ -21,7 +21,7 @@ type WebDriver struct {
 }
 
 type WebElement struct {
-	WebDriver
+	*WebDriver
 	WebElementId       string
 	WebElementSelector *data.Selector
 }
@@ -84,7 +84,7 @@ func Driver(capsFn ...capabilities.CapabilitiesFunc) *WebDriver {
 }
 
 func (w *WebDriver) Url(u string) string {
-	url, err := w.WebClient.Url(u)
+	url, err := w.WebClient.Url(u, w.SessionId)
 	if err != nil {
 		fmt.Printf("error on new driver session: %v", err)
 		return ""
@@ -125,10 +125,11 @@ func (w *WebDriver) F(s string) *WebElement {
 	selector := Strategy(s)
 	eId, err := w.WebClient.FindElement(selector, w.SessionId)
 	if err != nil {
-		panic(fmt.Sprintf("error on open: %v", err))
+		panic(fmt.Sprintf("error on find element: %v", err))
 	}
 
 	return &WebElement{
+		WebDriver:    w,
 		WebElementId: eId,
 	}
 }
@@ -136,8 +137,17 @@ func (w *WebDriver) F(s string) *WebElement {
 func (w *WebElement) IsDisplayed() bool {
 	ok, err := w.WebClient.IsDisplayed(w.SessionId, w.WebElementId)
 	if err != nil {
-		panic(fmt.Sprintf("error on open: %v", err))
+		panic(fmt.Sprintf("error on isdisplayed: %v", err))
 	}
 
 	return ok
+}
+
+func (w *WebElement) Click() *WebElement {
+	err := w.WebClient.Click(w.SessionId, w.WebElementId)
+	if err != nil {
+		panic(fmt.Sprintf("error on click: %v", err))
+	}
+
+	return w
 }
