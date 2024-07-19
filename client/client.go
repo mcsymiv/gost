@@ -20,6 +20,7 @@ import (
 )
 
 const (
+	// W3C Endpoints
 	sessionEndpoint     = "%s/session"
 	quitEndpoint        = "%s/session/%s"
 	urlEndpoint         = "%s/session/%s/url"
@@ -27,6 +28,10 @@ const (
 	isDisplayedEndpoint = "%s/session/%s/element/%s/displayed"
 	clickEndpoint       = "%s/session/%s/element/%s/click"
 	sendKeysEndpoint    = "%s/session/%s/element/%s/value"
+	attributeEndpoint   = "%s/session/%s/element/%s/attribute/%s"
+
+	// GoST Endpoints
+	isEndpoint = "%s/session/%s/element/%s/is"
 )
 
 const (
@@ -421,6 +426,22 @@ func (c *WebClient) IsDisplayed(sessionId, elementId string) (bool, error) {
 	return reply.Value, nil
 }
 
+func (c *WebClient) Is(sessionId, elementId string) (bool, error) {
+	p := fmt.Sprintf(isEndpoint, c.WebConfig.WebServerAddr, sessionId, elementId)
+	res, err := c.Get(p)
+	if err != nil {
+		fmt.Println("errr")
+		return false, fmt.Errorf("error on is request: %v", err)
+	}
+
+	defer res.Body.Close()
+
+	reply := new(struct{ Value bool })
+	unmarshalRes(&res.Response, reply)
+
+	return reply.Value, nil
+}
+
 func (c *WebClient) Click(sessionId, elementId string) error {
 	p := fmt.Sprintf(clickEndpoint, c.WebConfig.WebServerAddr, sessionId, elementId)
 	d := marshalData(data.Empty{})
@@ -441,10 +462,25 @@ func (c *WebClient) Keys(keys, sessionId, elementId string) error {
 	})
 	res, err := c.Post(p, bytes.NewBuffer(d))
 	if err != nil {
-		return fmt.Errorf("error on click request: %v", err)
+		return fmt.Errorf("error on keys request: %v", err)
 	}
 
 	defer res.Body.Close()
 
 	return nil
+}
+
+func (c *WebClient) Attr(attr, sessionId, elementId string) (string, error) {
+	p := fmt.Sprintf(attributeEndpoint, c.WebConfig.WebServerAddr, sessionId, elementId, attr)
+	res, err := c.Get(p)
+	if err != nil {
+		return "", fmt.Errorf("error on attribute request: %v", err)
+	}
+
+	defer res.Body.Close()
+
+	reply := new(struct{ Value string })
+	unmarshalRes(&res.Response, reply)
+
+	return reply.Value, nil
 }

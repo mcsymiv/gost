@@ -143,6 +143,19 @@ func (w *WebElement) IsDisplayed() bool {
 	return ok
 }
 
+func (w *WebElement) Is() *WebElement {
+	ok, err := w.WebClient.Is(w.SessionId, w.WebElementId)
+	if err != nil {
+		panic(fmt.Sprintf("error on is: %v", err))
+	}
+
+	if !ok {
+		panic(fmt.Sprintf("error on is, element not displayed: %v", err))
+	}
+
+	return w
+}
+
 func (w *WebElement) Click() *WebElement {
 	err := w.WebClient.Click(w.SessionId, w.WebElementId)
 	if err != nil {
@@ -159,4 +172,12 @@ func (w *WebElement) Keys(keys string) *WebElement {
 	}
 
 	return w
+}
+func (w *WebElement) Attr(attr string) string {
+	a, err := w.WebClient.Attr(attr, w.SessionId, w.WebElementId)
+	if err != nil {
+		panic(fmt.Sprintf("error on click: %v", err))
+	}
+
+	return a
 }
