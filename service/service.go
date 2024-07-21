@@ -42,11 +42,11 @@ func Handler() http.Handler {
 	sm.HandleFunc("POST /session", wd.post())
 	sm.HandleFunc("DELETE /session/{sessionId}", wd.delete())
 	sm.HandleFunc("POST /session/{sessionId}/url", wd.post())
-	sm.Handle("POST /session/{sessionId}/element", wd.postRetrier(&verifyStatusOk{}, wd.post()))
+	sm.Handle("POST /session/{sessionId}/element", logger(wd.retrier(&verifyStatusOk{}, wd.post())))
 	// TODO: add display_test
-	sm.Handle("GET /session/{sessionId}/element/{elementId}/displayed", wd.getRetrier(&verifyDisplay{}, wd.get()))
-	sm.Handle("GET /session/{sessionId}/element/{elementId}/attribute/{attribute}", wd.getRetrier(&verifyStatusOk{}, wd.get()))
-	sm.Handle("GET /session/{sessionId}/element/{elementId}/is", wd.isRetrier(&verifyDisplay{}, wd.get()))
+	sm.Handle("GET /session/{sessionId}/element/{elementId}/displayed", wd.retrier(&verifyValue{}, wd.get()))
+	sm.Handle("GET /session/{sessionId}/element/{elementId}/attribute/{attribute}", wd.retrier(&verifyStatusOk{}, wd.get()))
+	sm.Handle("GET /session/{sessionId}/element/{elementId}/is", wd.isDisplayed(wd.isRetrier(&verifyValue{}, wd.get())))
 	sm.HandleFunc("POST /session/{sessionId}/element/{elementId}/click", wd.post())
 	sm.HandleFunc("POST /session/{sessionId}/element/{elementId}/value", wd.post())
 

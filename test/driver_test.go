@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mcsymiv/gost/capabilities"
 	"github.com/mcsymiv/gost/command"
@@ -56,12 +57,12 @@ func TestDriver(t *testing.T) {
 	)
 	defer tear()
 
-	// repo := "/repository/download/"
-	// allure := ":id/allure-report.zip!/allure-report-test/index.html#suites"
+	repo := "/repository/download/"
+	allure := ":id/allure-report.zip!/allure-report-test/index.html#suites"
 	host := os.Getenv("DOWNLOAD_HOST")
 	testEnv := "dev01"
 
-	// var rLinks []string
+	var rLinks []string
 	sNames := []string{
 		// os.Getenv("SUITE_NAME_1"), // smoke
 		os.Getenv("SUITE_NAME_2"), // regress
@@ -93,13 +94,13 @@ func TestDriver(t *testing.T) {
 		buildLink := strings.Join(strings.Split(buildLinkRaw, "/")[2:], "/")
 
 		fmt.Println(buildLink)
-		// rLinks = append(rLinks, fmt.Sprintf("%s%s%s%s", host, repo, buildLink, allure))
+		rLinks = append(rLinks, fmt.Sprintf("%s%s%s%s", host, repo, buildLink, allure))
 	}
-	//
-	// for _, rLink := range rLinks {
-	// 	d.Url(rLink)
-	// 	time.Sleep(10 * time.Second)
-	// 	d.F("[data-tooltip='Download CSV']").Click()
-	// 	time.Sleep(10 * time.Second)
-	// }
+
+	for _, rLink := range rLinks {
+		d.Url(rLink)
+		time.Sleep(10 * time.Second)
+		d.F("[data-tooltip='Download CSV']").Click()
+		time.Sleep(10 * time.Second)
+	}
 }

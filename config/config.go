@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var Config *WebConfig
@@ -21,6 +22,8 @@ type WebConfig struct {
 	WebDriverAddr    string
 	DriverLogsFile   string
 	ScreenshotOnFail bool
+	WaitForTimeout   time.Duration
+	WaitForInterval  time.Duration
 }
 
 type ConfigFunc func(*WebConfig)
@@ -31,6 +34,8 @@ func DefaultConfig() *WebConfig {
 		WebDriverAddr:    "http://localhost:4444",
 		DriverLogsFile:   "../driver.logs",
 		ScreenshotOnFail: true,
+		WaitForTimeout:   20,
+		WaitForInterval:  200,
 	}
 }
 
@@ -45,9 +50,11 @@ func NewConfig(confFn ...ConfigFunc) *WebConfig {
 	}
 
 	conf = &WebConfig{
-		WebServerAddr:  fmt.Sprintf("%s:%s", os.Getenv("SERVER_HOST"), os.Getenv("SERVER_PORT")),
-		WebDriverAddr:  fmt.Sprintf("%s:%s", os.Getenv("DRIVER_HOST"), os.Getenv("DRIVER_PORT")),
-		DriverLogsFile: os.Getenv("DRIVER_LOGS"),
+		WebServerAddr:   fmt.Sprintf("%s:%s", os.Getenv("SERVER_HOST"), os.Getenv("SERVER_PORT")),
+		WebDriverAddr:   fmt.Sprintf("%s:%s", os.Getenv("DRIVER_HOST"), os.Getenv("DRIVER_PORT")),
+		DriverLogsFile:  os.Getenv("DRIVER_LOGS"),
+		WaitForTimeout:  toWaitTimeout(os.Getenv("WAIT_TIMEOUT")),
+		WaitForInterval: toWaitInterval(os.Getenv("WAIT_INTERVAL")),
 	}
 
 	return conf
@@ -76,6 +83,24 @@ func WebConfigDriverScreenshoOnFail(onFail string) ConfigFunc {
 	return func(conf *WebConfig) {
 		conf.ScreenshotOnFail = screenshotOnFail
 	}
+}
+
+func toWaitTimeout(dur string) time.Duration {
+	d, err := strconv.Atoi(dur)
+	if err != nil {
+		return 20
+	}
+
+	return time.Duration(d)
+}
+
+func toWaitInterval(dur string) time.Duration {
+	d, err := strconv.Atoi(dur)
+	if err != nil {
+		return 200
+	}
+
+	return time.Duration(d)
 }
 
 func loadEnv(fRootPath, fName string) error {
