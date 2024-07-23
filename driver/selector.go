@@ -54,7 +54,7 @@ func Strategy(value string) *data.Selector {
 	}
 
 	s.Using = data.ByXPath
-	s.Value = fmt.Sprintf("//*[text()='%[1]s'] | //*[@placeholder='%[1]s'] | //*[@value='%[1]s']", value)
+	s.Value = fmt.Sprintf("//*[text()='%[1]s'] | //*[@placeholder='%[1]s'] | //*[@value='%[1]s'] | //*[@title='%[1]s']", value)
 
 	return s
 }

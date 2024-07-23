@@ -81,7 +81,7 @@ func (wd *WebDriverHandler) retrier(v verifier, next http.Handler) http.Handler 
 			}
 
 			// close res res.Body if not verified
-			// i.e. loopStrategyRequest returns false
+			// i.e. StrategyRequest returns false
 			res.Body.Close()
 
 			if time.Now().After(end) {
@@ -104,70 +104,6 @@ func (wd *WebDriverHandler) retrier(v verifier, next http.Handler) http.Handler 
 		next.ServeHTTP(w, r)
 	})
 }
-
-// func (wd *WebDriverHandler) getRetrier(v verifier, next http.Handler) http.Handler {
-//
-// 	var res *http.Response
-//
-// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 		url := fmt.Sprintf("%s%s", wd.conf.WebDriverAddr, r.URL.Path)
-// 		start := time.Now()
-// 		end := start.Add(wd.conf.WaitForTimeout * time.Second)
-//
-// 		for {
-// 			req, err := http.NewRequest(http.MethodGet, url, nil)
-// 			if err != nil {
-// 				fmt.Println("error on NewRequest")
-// 				req.Body.Close()
-// 				panic(err)
-// 			}
-//
-// 			res, err = wd.client.Do(req)
-// 			if err != nil {
-// 				fmt.Println("error on Client Do Request")
-// 				res.Body.Close()
-// 				panic(err)
-// 			}
-//
-// 			// strategy for strategy
-// 			// "verified" response will return true
-// 			// and break out of the loop
-// 			if v.verify(res) {
-// 				break
-// 			}
-//
-// 			// close res res.Body if not verified
-// 			// i.e. loopStrategyRequest returns false
-// 			res.Body.Close()
-//
-// 			if time.Now().After(end) {
-// 				log.Println("timeout")
-// 				if wd.conf.ScreenshotOnFail {
-// 					fmt.Println("screnshot")
-// 					// d.Screenshot()
-// 				}
-//
-// 				break
-// 			}
-//
-// 			time.Sleep(wd.conf.WaitForInterval * time.Millisecond)
-// 			fmt.Println("retry find element")
-// 		}
-//
-// 		body, err := io.ReadAll(res.Body)
-// 		if err != nil {
-// 			json.NewEncoder(w).Encode(fmt.Errorf("error on read post response: %v", err))
-// 			return
-// 		}
-//
-// 		defer res.Body.Close()
-//
-// 		w.Header().Set(config.ContenType, config.ApplicationJson)
-// 		w.Write(body)
-//
-// 		next.ServeHTTP(w, r)
-// 	})
-// }
 
 func (wd *WebDriverHandler) isRetrier(v verifier, next http.Handler) http.Handler {
 
@@ -203,7 +139,7 @@ func (wd *WebDriverHandler) isRetrier(v verifier, next http.Handler) http.Handle
 			}
 
 			// close res res.Body if not verified
-			// i.e. loopStrategyRequest returns false
+			// i.e. StrategyRequest returns false
 			res.Body.Close()
 
 			if time.Now().After(end) {
@@ -241,6 +177,17 @@ func (wd *WebDriverHandler) isDisplayed(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		servicePath := r.URL.Path
 		wdPath := strings.Replace(servicePath, "is", "displayed", 1)
+
+		r.URL.Path = wdPath
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (wd *WebDriverHandler) script(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		servicePath := r.URL.Path
+		wdPath := strings.Replace(servicePath, "script", "execute/sync", 1)
 
 		r.URL.Path = wdPath
 

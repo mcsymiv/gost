@@ -12,6 +12,22 @@ import (
 	"time"
 )
 
+const (
+	// LegacyWebElementIdentifier is the string constant used in the old Selenium 2 protocol
+	// WebDriver JSON protocol that is the key for the map that contains an
+	// unique element identifier.
+	// This value is ignored in element id retreival
+	LegacyWebElementIdentifier = "ELEMENT"
+
+	// WebElementIdentifier is the string constant defined by the W3C Selenium 3 protocol
+	// specification that is the key for the map that contains a unique element identifier.
+	WebElementIdentifier = "element-6066-11e4-a52e-4f735466cecf"
+
+	// ShadowRootIdentifier A shadow root is an abstraction used to identify a shadow root when
+	// it is transported via the protocol, between remote and local ends.
+	ShadowRootIdentifier = "shadow-6066-11e4-a52e-4f735466cecf"
+)
+
 var Config *WebConfig
 
 const ApplicationJson string = "application/json"
@@ -104,7 +120,7 @@ func toWaitInterval(dur string) time.Duration {
 }
 
 func loadEnv(fRootPath, fName string) error {
-	f, err := findFile(fRootPath, fName)
+	f, err := FindFile(fRootPath, fName)
 	if err != nil {
 		return fmt.Errorf("file not found: %v", err)
 	}
@@ -142,7 +158,7 @@ func dotenv(filepath string) error {
 	return nil
 }
 
-func findFile(fPath, fName string) (string, error) {
+func FindFile(fPath, fName string) (string, error) {
 	var f string
 
 	err := filepath.WalkDir(fPath, func(path string, info fs.DirEntry, err error) error {

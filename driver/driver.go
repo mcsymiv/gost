@@ -86,7 +86,7 @@ func Driver(capsFn ...capabilities.CapabilitiesFunc) *WebDriver {
 func (w *WebDriver) Url(u string) string {
 	url, err := w.WebClient.Url(u, w.SessionId)
 	if err != nil {
-		fmt.Printf("error on new driver session: %v", err)
+		fmt.Printf("error on url: %v", err)
 		return ""
 	}
 
@@ -180,4 +180,17 @@ func (w *WebElement) Attr(attr string) string {
 	}
 
 	return a
+}
+
+func (w *WebDriver) Script(s string, args ...interface{}) {
+	err := w.WebClient.Script(s, w.SessionId, args)
+	if err != nil {
+		panic(fmt.Sprintf("error on script: %v", err))
+	}
+}
+
+func (w *WebElement) ElementIdentifier() map[string]string {
+	return map[string]string{
+		config.WebElementIdentifier: w.WebElementId,
+	}
 }

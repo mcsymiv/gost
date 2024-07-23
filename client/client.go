@@ -32,6 +32,8 @@ const (
 
 	// GoST Endpoints
 	isEndpoint = "%s/session/%s/element/%s/is"
+	// syncScriptEndpoint = "%s/session/%s/execute/sync"
+	syncScriptEndpoint = "%s/session/%s/script"
 )
 
 const (
@@ -483,4 +485,24 @@ func (c *WebClient) Attr(attr, sessionId, elementId string) (string, error) {
 	unmarshalRes(&res.Response, reply)
 
 	return reply.Value, nil
+}
+
+func (c *WebClient) Script(script, sessionId string, args ...interface{}) error {
+	if args == nil {
+		args = make([]interface{}, 0)
+	}
+
+	body := marshalData(map[string]interface{}{
+		"script": script,
+		"args":   args,
+	})
+
+	p := fmt.Sprintf(syncScriptEndpoint, c.WebConfig.WebServerAddr, sessionId)
+	res, err := c.Post(p, bytes.NewBuffer(body))
+	if err != nil {
+		return fmt.Errorf("error on find element request: %v", err)
+	}
+
+	defer res.Body.Close()
+	return nil
 }

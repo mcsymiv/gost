@@ -49,6 +49,7 @@ func Handler() http.Handler {
 	sm.Handle("GET /session/{sessionId}/element/{elementId}/is", wd.isDisplayed(wd.isRetrier(&verifyValue{}, wd.get())))
 	sm.HandleFunc("POST /session/{sessionId}/element/{elementId}/click", wd.post())
 	sm.HandleFunc("POST /session/{sessionId}/element/{elementId}/value", wd.post())
+	sm.Handle("POST /session/{sessionId}/script", wd.script(wd.post()))
 
 	return sm
 }
