@@ -45,11 +45,13 @@ func Service() func() {
 	}
 }
 
-func Gost(t *testing.T, capsFn ...capabilities.CapabilitiesFunc) (*driver.WebDriver, func(), func(), Step) {
+func Gost(t *testing.T, capsFn ...capabilities.CapabilitiesFunc) *Spec {
 	gTear := Service()
 	wd, wdTear := Driver(capsFn...)
 
-	return wd, wdTear, gTear, Step{
-		TK: t,
+	return &Spec{
+		TK:   t,
+		WD:   wd,
+		Tear: []func(){wdTear, gTear},
 	}
 }

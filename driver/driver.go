@@ -121,25 +121,6 @@ func (w *WebDriver) FindElement(selector *data.Selector) *WebElement {
 	}
 }
 
-func (w *WebDriver) FindClick(s string) func() {
-	el := func() *WebElement {
-		selector := Strategy(s)
-		eId, err := w.WebClient.FindElement(selector, w.SessionId)
-		if err != nil {
-			panic(fmt.Sprintf("error on find element: %v", err))
-		}
-
-		return &WebElement{
-			WebDriver:    w,
-			WebElementId: eId,
-		}
-	}
-
-	return func() {
-		el().Click()
-	}
-}
-
 func (w *WebDriver) F(s string) *WebElement {
 	selector := Strategy(s)
 	eId, err := w.WebClient.FindElement(selector, w.SessionId)
@@ -183,6 +164,7 @@ func (w *WebElement) Click() *WebElement {
 
 	return w
 }
+
 
 func (w *WebElement) Keys(keys string) *WebElement {
 	err := w.WebClient.Keys(keys, w.SessionId, w.WebElementId)
