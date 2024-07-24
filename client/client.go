@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -31,25 +30,8 @@ const (
 	attributeEndpoint   = "%s/session/%s/element/%s/attribute/%s"
 
 	// GoST Endpoints
-	isEndpoint = "%s/session/%s/element/%s/is"
-	// syncScriptEndpoint = "%s/session/%s/execute/sync"
+	isEndpoint         = "%s/session/%s/element/%s/is"
 	syncScriptEndpoint = "%s/session/%s/script"
-)
-
-const (
-	// LegacyWebElementIdentifier is the string constant used in the old Selenium 2 protocol
-	// WebDriver JSON protocol that is the key for the map that contains an
-	// unique element identifier.
-	// This value is ignored in element id retreival
-	LegacyWebElementIdentifier = "ELEMENT"
-
-	// WebElementIdentifier is the string constant defined by the W3C Selenium 3 protocol
-	// specification that is the key for the map that contains a unique element identifier.
-	WebElementIdentifier = "element-6066-11e4-a52e-4f735466cecf"
-
-	// ShadowRootIdentifier A shadow root is an abstraction used to identify a shadow root when
-	// it is transported via the protocol, between remote and local ends.
-	ShadowRootIdentifier = "shadow-6066-11e4-a52e-4f735466cecf"
 )
 
 // RestClient represents a REST client configuration.
@@ -92,7 +74,7 @@ func NewClient() *WebClient {
 		HTTPClient: &http.Client{
 			Transport: &retry{
 				maxRetries: 3,
-				delay:      time.Duration(200 * time.Millisecond),
+				delay:      time.Duration(config.Config.WaitForInterval * time.Millisecond),
 				next: &loggin{
 					next: http.DefaultTransport,
 				},
@@ -109,7 +91,7 @@ func WebDriverClient() *WebClient {
 		HTTPClient: &http.Client{
 			Transport: &retry{
 				maxRetries: 3,
-				delay:      time.Duration(200 * time.Millisecond),
+				delay:      time.Duration(config.Config.WaitForInterval * time.Millisecond),
 				next: &loggin{
 					next: http.DefaultTransport,
 				},
@@ -137,7 +119,7 @@ type HttpResponse struct {
 }
 
 func ElementID(v map[string]string) string {
-	id, ok := v[WebElementIdentifier]
+	id, ok := v[config.WebElementIdentifier]
 	if !ok || id == "" {
 		panic(fmt.Sprintf("Error on find element: %v", v))
 	}
@@ -148,7 +130,7 @@ func ElementsID(v []map[string]string) []string {
 	var els []string
 
 	for _, el := range v {
-		id, ok := el[WebElementIdentifier]
+		id, ok := el[config.WebElementIdentifier]
 		if !ok || id == "" {
 			panic(fmt.Sprintf("Error on find elements: %v", v))
 		}
@@ -200,20 +182,6 @@ func (self *WebClient) Request(method string, urlpath string, body io.Reader) (r
 	return
 }
 
-func (self *WebClient) NewRequest(method string, urlpath string, body io.Reader, headers map[string]string) (req *http.Request) {
-	req, err := http.NewRequest(strings.ToUpper(method), urlpath, body)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	req.Close = self.Close
-	req.Host = self.Host
-
-	self.addHeaders(req, headers)
-
-	return
-}
-
 func CloseResponse(r *http.Response) {
 	if r != nil && r.Body != nil {
 		io.Copy(io.Discard, r.Body)
@@ -234,67 +202,8 @@ func (self *WebClient) Do(req *http.Request) (*HttpResponse, error) {
 	}
 }
 
-// ParamValues fills the input url.Values according to params
-func ParamValues(params map[string]interface{}, q url.Values) url.Values {
-	if q == nil {
-		q = url.Values{}
-	}
-
-	for k, v := range params {
-		val := reflect.ValueOf(v)
-
-		switch val.Kind() {
-		case reflect.Slice:
-			if val.IsNil() { // TODO: add an option to ignore empty values
-				q.Set(k, "")
-				continue
-			}
-			fallthrough
-
-		case reflect.Array:
-			for i := 0; i < val.Len(); i++ {
-				av := val.Index(i)
-				q.Add(k, fmt.Sprintf("%v", av))
-			}
-
-		default:
-			q.Set(k, fmt.Sprintf("%v", v))
-		}
-	}
-
-	return q
-}
-
-func URLWithParams(base string, params map[string]interface{}) (u *url.URL) {
-	return URLWithPathParams(base, "", params)
-}
-
-// Given a base URL and a bag of parameteters returns the URL with the encoded parameters
-func URLWithPathParams(base string, path string, params map[string]interface{}) (u *url.URL) {
-	u, err := url.Parse(base)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if len(path) > 0 {
-		u, err = u.Parse(path)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	q := ParamValues(params, u.Query())
-	u.RawQuery = q.Encode()
-	return u
-}
-
 func (self *WebClient) Post(path string, content io.Reader) (*HttpResponse, error) {
 	req := self.Request(http.MethodPost, path, content)
-	return self.Do(req)
-}
-
-func (self *WebClient) GetWithParams(path string, params map[string]interface{}) (*HttpResponse, error) {
-	req := self.Request(http.MethodGet, URLWithParams(path, params).String(), nil)
 	return self.Do(req)
 }
 

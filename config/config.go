@@ -34,12 +34,57 @@ const ApplicationJson string = "application/json"
 const ContenType string = "Content-Type"
 
 type WebConfig struct {
-	WebServerAddr    string
-	WebDriverAddr    string
-	DriverLogsFile   string
+	// WebServerAddr
+	// Default value http://localhost:8080
+	WebServerAddr string
+
+	// WebDriverAddr
+	// Default value http://localhost:4444
+	WebDriverAddr string
+
+	// DriverLogsFile
+	DriverLogsFile string
+
+	// ScreenshotOnFail
+	// used in find element strategy
+	// takes screenshot and writes to artifacts
+	// if unable to find webelement within timeout
 	ScreenshotOnFail bool
-	WaitForTimeout   time.Duration
-	WaitForInterval  time.Duration
+
+	// WaitForTimeout
+	// used in find element strategy
+	// controls timeout of performing driver.F("selector") find
+	// 20 seconds default value
+	WaitForTimeout time.Duration
+
+	// WaitForInterval
+	// delay to retry find element request
+	// 200 ms is an arbitrary value
+	WaitForInterval time.Duration
+
+	// RefreshOnFindError
+	// calls /session/{sessionId}/refresh
+	// if find retry fails
+	RefreshOnFindError bool
+
+	// Artifact path
+	//
+	// ArtifactRecordsPath
+	// from app root a directory that stores
+	// Google Chrome Recorder json files
+	// for TestSteps generation
+	// will check specified path for *.json records
+	ArtifactRecordsPath string
+
+	// ArtifactScreenshotsPath
+	// from app root a directory where
+	// ScreenshotOnFail, or d.Screenshot()
+	// stores driver screnshots in *.jpg format
+	ArtifactScreenshotsPath string
+
+	// ArtifactJsFilesPath
+	// from app root a directory where
+	JsFilesPath string
 }
 
 type ConfigFunc func(*WebConfig)
@@ -52,6 +97,7 @@ func DefaultConfig() *WebConfig {
 		ScreenshotOnFail: true,
 		WaitForTimeout:   20,
 		WaitForInterval:  200,
+		JsFilesPath:      "../js",
 	}
 }
 
@@ -71,6 +117,7 @@ func NewConfig(confFn ...ConfigFunc) *WebConfig {
 		DriverLogsFile:  os.Getenv("DRIVER_LOGS"),
 		WaitForTimeout:  toWaitTimeout(os.Getenv("WAIT_TIMEOUT")),
 		WaitForInterval: toWaitInterval(os.Getenv("WAIT_INTERVAL")),
+		JsFilesPath:     os.Getenv("JS_FILES_PATH"),
 	}
 
 	return conf

@@ -2,6 +2,7 @@ package driver
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 
 	"github.com/mcsymiv/gost/capabilities"
@@ -189,7 +190,24 @@ func (w *WebDriver) Script(s string, args ...interface{}) {
 	}
 }
 
-func (w *WebElement) ElementIdentifier() map[string]string {
+func (w *WebDriver) ExecuteScript(fName string, args ...interface{}) {
+	f, err := config.FindFile(config.Config.JsFilesPath, fmt.Sprintf("%s.js", fName))
+	if err != nil {
+		panic(fmt.Sprintf("error on find file: %v", err))
+	}
+
+	c, err := os.ReadFile(f)
+	if err != nil {
+		panic(fmt.Sprintf("error on read file: %v", err))
+	}
+
+	err = w.WebClient.Script(string(c), w.SessionId, args)
+	if err != nil {
+		panic(fmt.Sprintf("error on script: %v", err))
+	}
+}
+
+func (w *WebElement) Id() map[string]string {
 	return map[string]string{
 		config.WebElementIdentifier: w.WebElementId,
 	}
