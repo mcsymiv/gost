@@ -183,14 +183,14 @@ func (w *WebElement) Attr(attr string) string {
 	return a
 }
 
-func (w *WebDriver) Script(s string, args ...interface{}) {
+func (w *WebDriver) ExecuteScript(s string, args ...interface{}) {
 	err := w.WebClient.Script(s, w.SessionId, args)
 	if err != nil {
 		panic(fmt.Sprintf("error on script: %v", err))
 	}
 }
 
-func (w *WebDriver) ExecuteScript(fName string, args ...interface{}) {
+func (w *WebDriver) Script(fName string, args ...interface{}) {
 	f, err := config.FindFile(config.Config.JsFilesPath, fmt.Sprintf("%s.js", fName))
 	if err != nil {
 		panic(fmt.Sprintf("error on find file: %v", err))

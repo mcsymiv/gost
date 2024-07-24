@@ -21,7 +21,7 @@ func TestScript(t *testing.T) {
 
 	id := d.F("LOG IN").Id()
 
-	d.ExecuteScript("click", id)
+	d.Script("click", id)
 	time.Sleep(7 * time.Second)
 	d.F("Clients").Click()
 
