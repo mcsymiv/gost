@@ -212,3 +212,12 @@ func (w *WebElement) Id() map[string]string {
 		config.WebElementIdentifier: w.WebElementId,
 	}
 }
+
+
+func (w *WebDriver) Screenshot() {
+	err := w.WebClient.Screenshot(w.SessionId)
+	if err != nil {
+		panic(fmt.Sprintf("error on script: %v", err))
+	}
+}
+

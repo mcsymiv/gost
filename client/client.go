@@ -2,13 +2,18 @@ package client
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"image/jpeg"
+	"image/png"
 	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -28,6 +33,7 @@ const (
 	clickEndpoint       = "%s/session/%s/element/%s/click"
 	sendKeysEndpoint    = "%s/session/%s/element/%s/value"
 	attributeEndpoint   = "%s/session/%s/element/%s/attribute/%s"
+	screenshotEndpoint  = "%s/session/%s/screenshot"
 
 	// GoST Endpoints
 	isEndpoint         = "%s/session/%s/element/%s/is"
@@ -413,5 +419,56 @@ func (c *WebClient) Script(script, sessionId string, args ...interface{}) error 
 	}
 
 	defer res.Body.Close()
+	return nil
+}
+
+func randSeq(n int) string {
+	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+	rand.NewSource(time.Now().UnixNano())
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
+}
+
+func (c *WebClient) Screenshot(sessionId string) error {
+	data := new(struct{ Value string })
+
+	p := fmt.Sprintf(screenshotEndpoint, c.WebConfig.WebServerAddr, sessionId)
+	res, err := c.Get(p)
+	if err != nil {
+		return fmt.Errorf("error on screenshot request: %v", err)
+	}
+
+	unmarshalRes(&res.Response, data)
+
+	decodedImage, err := base64.StdEncoding.DecodeString(data.Value)
+	if err != nil {
+		return fmt.Errorf("error on decode base64 string: %v", err)
+	}
+
+	// Create an image.Image from decoded bytes
+	img, err := png.Decode(strings.NewReader(string(decodedImage)))
+	if err != nil {
+		return fmt.Errorf("error on decode: %v", err)
+	}
+
+	fmt.Println("pathh", config.Config.ScreenshotsPath)
+	// Create a new file for the output JPEG image
+	// TODO: upd randSeq, use meaninful screenshot name
+	outputFile, err := os.Create(fmt.Sprintf("%s/%s_%s.jpg", config.Config.ScreenshotsPath, randSeq(8), time.Now().Format("2006_01_02_15:04:05")))
+	if err != nil {
+		return fmt.Errorf("error on create file: %v", err)
+	}
+	defer outputFile.Close()
+
+	// Encode the image as JPEG
+	err = jpeg.Encode(outputFile, img, nil)
+	if err != nil {
+		return fmt.Errorf("error on encode: %v", err)
+	}
+
 	return nil
 }

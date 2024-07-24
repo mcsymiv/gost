@@ -80,7 +80,7 @@ type WebConfig struct {
 	// from app root a directory where
 	// ScreenshotOnFail, or d.Screenshot()
 	// stores driver screnshots in *.jpg format
-	ArtifactScreenshotsPath string
+	ScreenshotsPath string
 
 	// ArtifactJsFilesPath
 	// from app root a directory where
@@ -98,6 +98,7 @@ func DefaultConfig() *WebConfig {
 		WaitForTimeout:   20,
 		WaitForInterval:  200,
 		JsFilesPath:      "../js",
+		ScreenshotsPath:  "../screenshots",
 	}
 }
 
@@ -118,6 +119,7 @@ func NewConfig(confFn ...ConfigFunc) *WebConfig {
 		WaitForTimeout:  toWaitTimeout(os.Getenv("WAIT_TIMEOUT")),
 		WaitForInterval: toWaitInterval(os.Getenv("WAIT_INTERVAL")),
 		JsFilesPath:     os.Getenv("JS_FILES_PATH"),
+		ScreenshotsPath: os.Getenv("SCREENSHOTS_PATH"),
 	}
 
 	return conf

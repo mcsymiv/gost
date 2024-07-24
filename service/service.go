@@ -50,6 +50,7 @@ func Handler() http.Handler {
 	sm.HandleFunc("POST /session/{sessionId}/element/{elementId}/click", wd.post())
 	sm.HandleFunc("POST /session/{sessionId}/element/{elementId}/value", wd.post())
 	sm.Handle("POST /session/{sessionId}/script", wd.script(wd.post()))
+	sm.Handle("GET /session/{sessionId}/screenshot", wd.get())
 
 	return sm
 }
