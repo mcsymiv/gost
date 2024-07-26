@@ -7,11 +7,17 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/mcsymiv/gost/config"
 )
+
+func sessionId(url string) string {
+	var sessionUUID = regexp.MustCompile(`[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`)
+	return sessionUUID.FindString(url)
+}
 
 func logger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -36,8 +42,7 @@ func recoverer(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-func (wd *WebDriverHandler) retrier(v verifier, next http.Handler) http.Handler {
-
+func (wd *WebDriverHandler) retrier(v verifier) http.Handler {
 	var res *http.Response
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -80,33 +85,32 @@ func (wd *WebDriverHandler) retrier(v verifier, next http.Handler) http.Handler 
 				break
 			}
 
-			// close res res.Body if not verified
-			// i.e. StrategyRequest returns false
-			res.Body.Close()
-
 			if time.Now().After(end) {
-				log.Println("timeout")
-				if wd.conf.ScreenshotOnFail {
-					fmt.Println("screnshot")
-					// d.Screenshot()
-				}
-
 				break
 			}
 
 			time.Sleep(wd.conf.WaitForInterval * time.Millisecond)
 			fmt.Println("retry find element")
+
+			// close res res.Body if not verified
+			// i.e. StrategyRequest returns false
+			res.Body.Close()
+		}
+
+		data, err = io.ReadAll(res.Body)
+		if err != nil {
+			json.NewEncoder(w).Encode(fmt.Errorf("error on get response: %v", err))
+			return
 		}
 
 		defer res.Body.Close()
 
-		io.TeeReader(res.Body, w)
-		next.ServeHTTP(w, r)
+		w.Header().Set(config.ContenType, config.ApplicationJson)
+		w.Write(data)
 	})
 }
 
-func (wd *WebDriverHandler) isRetrier(v verifier, next http.Handler) http.Handler {
-
+func (wd *WebDriverHandler) isRetrier(v verifier) http.Handler {
 	var ok struct{ Value bool }
 	var res *http.Response
 
@@ -138,28 +142,20 @@ func (wd *WebDriverHandler) isRetrier(v verifier, next http.Handler) http.Handle
 				break
 			}
 
-			// close res res.Body if not verified
-			// i.e. StrategyRequest returns false
-			res.Body.Close()
-
 			if time.Now().After(end) {
-				log.Println("timeout")
-				// if config.TestSetting.ScreenshotOnFail {
-				if wd.conf.ScreenshotOnFail {
-					fmt.Println("screnshot")
-					// d.Screenshot()
-				}
-
 				break
 			}
 
 			time.Sleep(wd.conf.WaitForInterval * time.Millisecond)
-			fmt.Println("retry find element")
+			fmt.Println("retry on displayed")
+
+			// close res res.Body if not verified
+			// i.e. StrategyRequest returns false
+			res.Body.Close()
 		}
 
 		body, err := json.Marshal(ok)
 		if err != nil {
-			fmt.Println("errr")
 			json.NewEncoder(w).Encode(fmt.Errorf("error on read post response: %v", err))
 			return
 		}
@@ -168,8 +164,6 @@ func (wd *WebDriverHandler) isRetrier(v verifier, next http.Handler) http.Handle
 
 		w.Header().Set(config.ContenType, config.ApplicationJson)
 		w.Write(body)
-
-		next.ServeHTTP(w, r)
 	})
 }
 
@@ -194,4 +188,3 @@ func (wd *WebDriverHandler) script(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
-

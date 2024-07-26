@@ -124,12 +124,12 @@ type HttpResponse struct {
 	http.Response
 }
 
-func ElementID(v map[string]string) string {
+func ElementID(v map[string]string) (string, error) {
 	id, ok := v[config.WebElementIdentifier]
 	if !ok || id == "" {
-		panic(fmt.Sprintf("Error on find element: %v", v))
+		return "", fmt.Errorf("Error on find element: %v", v)
 	}
-	return id
+	return id, nil
 }
 
 func ElementsID(v []map[string]string) []string {
@@ -273,8 +273,15 @@ func (c *WebClient) FindElement(selector *data.Selector, sessionId string) (stri
 	defer res.Body.Close()
 
 	reply := new(struct{ Value map[string]string })
+
 	unmarshalRes(&res.Response, reply)
-	eId := ElementID(reply.Value)
+	eId, err := ElementID(reply.Value)
+	if err != nil {
+		if c.WebConfig.ScreenshotOnFail {
+			c.Screenshot(sessionId)
+		}
+		return "", fmt.Errorf("error on find element id, Error: %v", reply.Value)
+	}
 
 	return eId, nil
 }
@@ -347,7 +354,9 @@ func (c *WebClient) Is(sessionId, elementId string) (bool, error) {
 	p := fmt.Sprintf(isEndpoint, c.WebConfig.WebServerAddr, sessionId, elementId)
 	res, err := c.Get(p)
 	if err != nil {
-		fmt.Println("errr")
+		if c.WebConfig.ScreenshotOnFail {
+			c.Screenshot(sessionId)
+		}
 		return false, fmt.Errorf("error on is request: %v", err)
 	}
 
