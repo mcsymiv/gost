@@ -10,10 +10,6 @@ type verifyStatusOk struct{}
 
 type verifyValue struct{}
 
-// type requestVerifier interface {
-// 	verify(*http.Response, ...interface{}) bool
-// }
-
 type verifier interface {
 	verify(*http.Response) bool
 }

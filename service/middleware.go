@@ -188,3 +188,71 @@ func (wd *WebDriverHandler) script(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+func (wd *WebDriverHandler) retrier2(v verifier) http.Handler {
+	var res *http.Response
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		url := fmt.Sprintf("%s%s", wd.conf.WebDriverAddr, r.URL.Path)
+
+		var data []byte
+		var err error
+
+		if r.Body != http.NoBody {
+			data, err = io.ReadAll(r.Body)
+			if err != nil {
+				json.NewEncoder(w).Encode(fmt.Errorf("error on read post request body: %v", err))
+			}
+
+			r.Body = io.NopCloser(bytes.NewReader(data))
+		}
+
+		start := time.Now()
+		end := start.Add(wd.conf.WaitForTimeout * time.Second)
+
+		for {
+			req, err := http.NewRequest(r.Method, url, bytes.NewReader(data))
+			if err != nil {
+				fmt.Println("error on NewRequest")
+				req.Body.Close()
+				panic(err)
+			}
+
+			res, err = wd.client.Do(req)
+			if err != nil {
+				fmt.Println("error on Client Do Request")
+				res.Body.Close()
+				panic(err)
+			}
+
+			// strategy for strategy
+			// "verified" response will return true
+			// and break out of the loop
+			if v.verify(res) {
+				break
+			}
+
+			if time.Now().After(end) {
+				break
+			}
+
+			time.Sleep(wd.conf.WaitForInterval * time.Millisecond)
+			fmt.Println("retry find element")
+
+			// close res res.Body if not verified
+			// i.e. StrategyRequest returns false
+			res.Body.Close()
+		}
+
+		data, err = io.ReadAll(res.Body)
+		if err != nil {
+			json.NewEncoder(w).Encode(fmt.Errorf("error on get response: %v", err))
+			return
+		}
+
+		defer res.Body.Close()
+
+		w.Header().Set(config.ContenType, config.ApplicationJson)
+		w.Write(data)
+	})
+}

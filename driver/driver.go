@@ -169,15 +169,16 @@ func (w *WebElement) Click() *WebElement {
 func (w *WebElement) Keys(keys string) *WebElement {
 	err := w.WebClient.Keys(keys, w.SessionId, w.WebElementId)
 	if err != nil {
-		panic(fmt.Sprintf("error on click: %v", err))
+		panic(fmt.Sprintf("error on keys: %v", err))
 	}
 
 	return w
 }
+
 func (w *WebElement) Attr(attr string) string {
 	a, err := w.WebClient.Attr(attr, w.SessionId, w.WebElementId)
 	if err != nil {
-		panic(fmt.Sprintf("error on click: %v", err))
+		panic(fmt.Sprintf("error on attribute: %v", err))
 	}
 
 	return a
@@ -213,11 +214,9 @@ func (w *WebElement) Id() map[string]string {
 	}
 }
 
-
 func (w *WebDriver) Screenshot() {
 	err := w.WebClient.Screenshot(w.SessionId)
 	if err != nil {
 		panic(fmt.Sprintf("error on script: %v", err))
 	}
 }
-
