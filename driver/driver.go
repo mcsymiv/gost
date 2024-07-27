@@ -220,3 +220,15 @@ func (w *WebDriver) Screenshot() {
 		panic(fmt.Sprintf("error on script: %v", err))
 	}
 }
+
+func (w *WebDriver) Active() *WebElement {
+	eId, err := w.WebClient.Active(w.SessionId)
+	if err != nil {
+		panic(fmt.Sprintf("error on find element: %v", err))
+	}
+
+	return &WebElement{
+		WebDriver:    w,
+		WebElementId: eId,
+	}
+}

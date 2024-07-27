@@ -1,3 +1,17 @@
+# contains sensitive and 
+# configuration variables
+# created per client/user
 .env
+
+# firefox or chrome logs
+# each run overrides file
+# content
 driver.logs
+
+# generated screenshot 
+# errors on findElement
 screenshots/*
+
+# generated chrome
+# records .json
+records/*

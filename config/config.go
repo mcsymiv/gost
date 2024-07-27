@@ -74,7 +74,7 @@ type WebConfig struct {
 	// Google Chrome Recorder json files
 	// for TestSteps generation
 	// will check specified path for *.json records
-	ArtifactRecordsPath string
+	RecordsPath string
 
 	// ArtifactScreenshotsPath
 	// from app root a directory where
@@ -99,6 +99,7 @@ func DefaultConfig() *WebConfig {
 		WaitForInterval:  200,
 		JsFilesPath:      "../js",
 		ScreenshotsPath:  "../screenshots",
+		RecordsPath:      "../records",
 	}
 }
 
@@ -120,6 +121,7 @@ func NewConfig(confFn ...ConfigFunc) *WebConfig {
 		WaitForInterval: toWaitInterval(os.Getenv("WAIT_INTERVAL")),
 		JsFilesPath:     os.Getenv("JS_FILES_PATH"),
 		ScreenshotsPath: os.Getenv("SCREENSHOTS_PATH"),
+		RecordsPath:     os.Getenv("RECORDS_PATH"),
 	}
 
 	return conf
@@ -215,6 +217,7 @@ func FindFile(fPath, fName string) (string, error) {
 			log.Println("error on walk dir callback", err)
 			return err
 		}
+
 		if !info.IsDir() && info.Name() == fName {
 			f = path
 		}

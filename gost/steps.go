@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/mcsymiv/gost/capabilities"
 	"github.com/mcsymiv/gost/driver"
 )
 
@@ -13,8 +14,8 @@ type Step struct {
 	Tear func()
 }
 
-func New(t *testing.T) *Step {
-	wd, tear := Gost()
+func New(t *testing.T, capsFn ...capabilities.CapabilitiesFunc) *Step {
+	wd, tear := Gost(capsFn...)
 	return &Step{
 		TK:   t,
 		WD:   wd,
@@ -106,6 +107,41 @@ func (s *Step) Type(text, selector string) {
 	}
 
 	el, err = click()
+	if err != nil {
+		s.TK.Errorf("%v", err)
+	}
+
+	keys := func() (*driver.WebElement, error) {
+		err := s.WD.WebClient.Keys(text, s.WD.SessionId, el.WebElementId)
+		if err != nil {
+			s.WD.Screenshot()
+			return nil, fmt.Errorf("error on keys: %v", err)
+		}
+
+		return el, nil
+	}
+
+	_, err = keys()
+	if err != nil {
+		s.TK.Errorf("%v", err)
+	}
+}
+
+func (s *Step) Keys(text string) {
+	active := func() (*driver.WebElement, error) {
+		eId, err := s.WD.WebClient.Active(s.WD.SessionId)
+		if err != nil {
+			s.WD.Screenshot()
+			return nil, fmt.Errorf("error on find element: %v", err)
+		}
+
+		return &driver.WebElement{
+			WebDriver:    s.WD,
+			WebElementId: eId,
+		}, nil
+	}
+
+	el, err := active()
 	if err != nil {
 		s.TK.Errorf("%v", err)
 	}

@@ -29,6 +29,7 @@ const (
 	quitEndpoint        = "%s/session/%s"
 	urlEndpoint         = "%s/session/%s/url"
 	findElementEndpoint = "%s/session/%s/element"
+	activeEndpoint      = "%s/session/%s/element/active"
 	isDisplayedEndpoint = "%s/session/%s/element/%s/displayed"
 	clickEndpoint       = "%s/session/%s/element/%s/click"
 	sendKeysEndpoint    = "%s/session/%s/element/%s/value"
@@ -480,4 +481,27 @@ func (c *WebClient) Screenshot(sessionId string) error {
 	}
 
 	return nil
+}
+
+func (c *WebClient) Active(sessionId string) (string, error) {
+	p := fmt.Sprintf(activeEndpoint, c.WebConfig.WebServerAddr, sessionId)
+	res, err := c.Get(p)
+	if err != nil {
+		return "", fmt.Errorf("error on active request: %v", err)
+	}
+
+	defer res.Body.Close()
+
+	reply := new(struct{ Value map[string]string })
+
+	unmarshalRes(&res.Response, reply)
+	eId, err := ElementID(reply.Value)
+	if err != nil {
+		if c.WebConfig.ScreenshotOnFail {
+			c.Screenshot(sessionId)
+		}
+		return "", fmt.Errorf("error on find active element id, Error: %v", reply.Value)
+	}
+
+	return eId, nil
 }
