@@ -10,9 +10,9 @@ import (
 func TestRecord(t *testing.T) {
 	config.Config = config.NewConfig()
 
-	var fName string = "../test/rec_1_test.go"
-	var rName string = "rec_1.json"
-	var tName string = "Record1"
+	var fName string = "../test/rec_2_test.go"
+	var rName string = "rec_2.json"
+	var tName string = "Record2"
 
 	gost.CreateTest(fName, rName, tName)
 }

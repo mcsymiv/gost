@@ -24,19 +24,25 @@ import (
 )
 
 const (
-	// W3C Endpoints
-	sessionEndpoint     = "%s/session"
-	quitEndpoint        = "%s/session/%s"
-	urlEndpoint         = "%s/session/%s/url"
+	// W3C Session
+	sessionEndpoint    = "%s/session"
+	quitEndpoint       = "%s/session/%s"
+	urlEndpoint        = "%s/session/%s/url"
+	screenshotEndpoint = "%s/session/%s/screenshot"
+
+	// W3C Element
 	findElementEndpoint = "%s/session/%s/element"
 	activeEndpoint      = "%s/session/%s/element/active"
 	isDisplayedEndpoint = "%s/session/%s/element/%s/displayed"
 	clickEndpoint       = "%s/session/%s/element/%s/click"
 	sendKeysEndpoint    = "%s/session/%s/element/%s/value"
 	attributeEndpoint   = "%s/session/%s/element/%s/attribute/%s"
-	screenshotEndpoint  = "%s/session/%s/screenshot"
+	// W3C Window
+	windowEndpoint        = "%s/session/%s/window"
+	newWindowEndpoint     = "%s/session/%s/window/new"
+	windowHandlesEndpoint = "%s/session/%s/window/handles"
 
-	// GoST Endpoints
+	// GoST
 	isEndpoint         = "%s/session/%s/element/%s/is"
 	syncScriptEndpoint = "%s/session/%s/script"
 )
@@ -257,6 +263,54 @@ func (c *WebClient) Open(url, sessionId string) (*data.Url, error) {
 	return &data.Url{
 		Url: reply.Value,
 	}, nil
+}
+
+func (c *WebClient) NewTab(sessionId string) error {
+	b := marshalData(&data.Empty{})
+	p := fmt.Sprintf(newWindowEndpoint, c.WebConfig.WebServerAddr, sessionId)
+
+	res, err := c.Post(p, bytes.NewBuffer(b))
+	if err != nil {
+		return fmt.Errorf("error on open request: %v", err)
+	}
+
+	defer res.Body.Close()
+
+	return nil
+}
+
+func (c *WebClient) Tabs(sessionId string) ([]string, error) {
+	h := new(struct{ Value []string })
+	url := fmt.Sprintf(windowHandlesEndpoint, c.WebConfig.WebServerAddr, sessionId)
+
+	res, err := c.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("error on tabs request: %v", err)
+	}
+
+	defer res.Body.Close()
+
+	unmarshalRes(&res.Response, h)
+
+	return h.Value, nil
+}
+
+func (c *WebClient) Tab(n int, sessionId string) error {
+	tabs, err := c.Tabs(sessionId)
+	if err != nil {
+		return fmt.Errorf("error on tabs request: %v", err)
+	}
+
+	tab := marshalData(map[string]string{"handle": tabs[n]})
+	url := fmt.Sprintf(windowEndpoint, c.WebConfig.WebServerAddr, sessionId)
+
+	res, err := c.Post(url, bytes.NewReader(tab))
+	if err != nil {
+		return fmt.Errorf("error on tab request: %v", err)
+	}
+
+	defer res.Body.Close()
+	return nil
 }
 
 func (c *WebClient) FindElement(selector *data.Selector, sessionId string) (string, error) {

@@ -104,6 +104,29 @@ func (w *WebDriver) Open(u string) string {
 	return url.Url
 }
 
+func (w *WebDriver) NewTab() {
+	err := w.WebClient.NewTab(w.SessionId)
+	if err != nil {
+		panic(fmt.Sprintf("error on new tabs: %v", err))
+	}
+}
+
+func (w *WebDriver) Tabs() []string {
+	tabs, err := w.WebClient.Tabs(w.SessionId)
+	if err != nil {
+		panic(fmt.Sprintf("error on tabs: %v", err))
+	}
+
+	return tabs
+}
+
+func (w *WebDriver) Tab(n int) {
+	err := w.WebClient.Tab(n, w.SessionId)
+	if err != nil {
+		panic(fmt.Sprintf("error on tab: %v", err))
+	}
+}
+
 func (w *WebDriver) Quit() {
 	err := w.WebClient.Quit(w.SessionId)
 	if err != nil {
