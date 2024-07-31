@@ -31,3 +31,8 @@ type Empty struct{}
 type SendKeys struct {
 	Text string `json:"text"`
 }
+
+type KeyAction struct {
+	Type string `json:"type"`
+	Key  string `json:"value"`
+}

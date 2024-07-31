@@ -33,14 +33,19 @@ const (
 	// W3C Element
 	findElementEndpoint = "%s/session/%s/element"
 	activeEndpoint      = "%s/session/%s/element/active"
+	textEndpoint        = "%s/session/%s/element/%s/text"
 	isDisplayedEndpoint = "%s/session/%s/element/%s/displayed"
 	clickEndpoint       = "%s/session/%s/element/%s/click"
 	sendKeysEndpoint    = "%s/session/%s/element/%s/value"
 	attributeEndpoint   = "%s/session/%s/element/%s/attribute/%s"
+
 	// W3C Window
 	windowEndpoint        = "%s/session/%s/window"
 	newWindowEndpoint     = "%s/session/%s/window/new"
 	windowHandlesEndpoint = "%s/session/%s/window/handles"
+
+	// W3C Action
+	actionEndpoint = "%s/session/%s/actions"
 
 	// GoST
 	isEndpoint         = "%s/session/%s/element/%s/is"
@@ -558,4 +563,94 @@ func (c *WebClient) Active(sessionId string) (string, error) {
 	}
 
 	return eId, nil
+}
+
+func (c *WebClient) Action(keys, action, sessionId string) error {
+	actions := make([]data.KeyAction, 0, len(keys))
+
+	for _, key := range keys {
+		actions = append(actions, data.KeyAction{
+			Type: action,
+			Key:  string(key),
+		})
+	}
+	p := fmt.Sprintf(actionEndpoint, c.WebConfig.WebServerAddr, sessionId)
+
+	data := marshalData(map[string]interface{}{
+		"actions": []interface{}{
+			map[string]interface{}{
+				"type":    "key",
+				"id":      "default keyboard",
+				"actions": actions,
+			}},
+	})
+
+	res, err := c.Post(p, bytes.NewReader(data))
+	if err != nil {
+		return fmt.Errorf("error on active request: %v", err)
+	}
+
+	defer res.Body.Close()
+
+	return nil
+}
+
+func (c *WebClient) Actions2(keys, action, sessionId string) error {
+	actions := make([]data.KeyAction, 0, len(keys))
+
+	for _, key := range keys {
+		actions = append(actions, data.KeyAction{
+			Type: action,
+			Key:  string(key),
+		})
+	}
+
+	p := fmt.Sprintf(actionEndpoint, c.WebConfig.WebServerAddr, sessionId)
+
+	data := marshalData(map[string]interface{}{
+		"actions": []interface{}{
+			map[string]interface{}{
+				"type":    "key",
+				"id":      "default keyboard",
+				"actions": actions,
+			}},
+	})
+
+	res, err := c.Post(p, bytes.NewReader(data))
+	if err != nil {
+		return fmt.Errorf("error on active request: %v", err)
+	}
+
+	defer res.Body.Close()
+
+	return nil
+}
+
+func (c *WebClient) ReleaseAction(sessionId string) error {
+	p := fmt.Sprintf(actionEndpoint, c.WebConfig.WebServerAddr, sessionId)
+
+	res, err := c.Delete(p)
+	if err != nil {
+		return fmt.Errorf("error on active request: %v", err)
+	}
+
+	defer res.Body.Close()
+
+	return nil
+}
+
+func (c *WebClient) Text(sessionId, elementId string) (string, error) {
+	p := fmt.Sprintf(textEndpoint, c.WebConfig.WebServerAddr, sessionId, elementId)
+
+	res, err := c.Get(p)
+	if err != nil {
+		return "", fmt.Errorf("error on text request: %v", err)
+	}
+
+	defer res.Body.Close()
+
+	t := new(struct{ Value string })
+	unmarshalRes(&res.Response, t)
+
+	return t.Value, nil
 }

@@ -47,6 +47,7 @@ func Handler() http.Handler {
 
 	sm.HandleFunc("POST /session/{sessionId}/element/{elementId}/click", wd.post())
 	sm.HandleFunc("POST /session/{sessionId}/element/{elementId}/value", wd.post())
+	sm.HandleFunc("GET /session/{sessionId}/element/{elementId}/text", wd.get())
 	sm.Handle("GET /session/{sessionId}/element/{elementId}/displayed", wd.retrier(&verifyValue{}))
 	sm.Handle("GET /session/{sessionId}/element/{elementId}/is", wd.isDisplayed(wd.isRetrier(&verifyValue{})))
 	sm.Handle("GET /session/{sessionId}/element/{elementId}/attribute/{attribute}", wd.retrier(&verifyStatusOk{}))
@@ -57,6 +58,9 @@ func Handler() http.Handler {
 	sm.HandleFunc("POST /session/{sessionId}/window", wd.post())
 	sm.HandleFunc("GET /session/{sessionId}/window/handles", wd.get())
 	sm.HandleFunc("POST /session/{sessionId}/window/new", wd.post())
+
+	sm.HandleFunc("POST /session/{sessionId}/actions", wd.post())
+	sm.HandleFunc("DELETE /session/{sessionId}/actions", wd.delete())
 	return sm
 }
 

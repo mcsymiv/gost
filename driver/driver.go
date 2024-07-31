@@ -255,3 +255,12 @@ func (w *WebDriver) Active() *WebElement {
 		WebElementId: eId,
 	}
 }
+
+func (w *WebElement) Text() string {
+	txt, err := w.WebClient.Text(w.SessionId, w.WebElementId)
+	if err != nil {
+		panic(fmt.Sprintf("error on action: %v", err))
+	}
+
+	return txt
+}
