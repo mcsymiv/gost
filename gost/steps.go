@@ -3,15 +3,18 @@ package gost
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/mcsymiv/gost/capabilities"
+	"github.com/mcsymiv/gost/config"
 	"github.com/mcsymiv/gost/driver"
 )
 
 type Step struct {
-	TK   *testing.T
-	WD   *driver.WebDriver
-	Tear func()
+	TK     *testing.T
+	WD     *driver.WebDriver
+	Tear   func()
+	Config config.WebConfig
 }
 
 func New(t *testing.T, capsFn ...capabilities.CapabilitiesFunc) *Step {
@@ -112,7 +115,7 @@ func (s *Step) Type(text, selector string) {
 	}
 
 	keys := func() (*driver.WebElement, error) {
-		err := s.WD.WebClient.Keys(text, s.WD.SessionId, el.WebElementId)
+		err := s.WD.WebClient.Input(text, s.WD.SessionId, el.WebElementId)
 		if err != nil {
 			s.WD.Screenshot()
 			return nil, fmt.Errorf("error on keys: %v", err)
@@ -128,8 +131,26 @@ func (s *Step) Type(text, selector string) {
 }
 
 func (s *Step) Keys(text string) {
-	active := func() (*driver.WebElement, error) {
-		eId, err := s.WD.WebClient.Active(s.WD.SessionId)
+	action := func() error {
+		err := s.WD.WebClient.Action(text, string(driver.KeyDownAction), s.WD.SessionId)
+		if err != nil {
+			s.WD.Screenshot()
+			return fmt.Errorf("error on find element: %v", err)
+		}
+
+		return nil
+	}
+
+	err := action()
+	if err != nil {
+		s.TK.Errorf("%v", err)
+	}
+}
+
+func (s *Step) Is(selector string) bool {
+	find := func() (*driver.WebElement, error) {
+		selector := driver.Strategy(selector)
+		eId, err := s.WD.WebClient.FindElement(selector, s.WD.SessionId)
 		if err != nil {
 			s.WD.Screenshot()
 			return nil, fmt.Errorf("error on find element: %v", err)
@@ -141,23 +162,44 @@ func (s *Step) Keys(text string) {
 		}, nil
 	}
 
-	el, err := active()
+	el, err := find()
 	if err != nil {
 		s.TK.Errorf("%v", err)
 	}
 
-	keys := func() (*driver.WebElement, error) {
-		err := s.WD.WebClient.Keys(text, s.WD.SessionId, el.WebElementId)
+	is := func() (bool, error) {
+		ok, err := s.WD.WebClient.Is(el.WebElementId, s.WD.SessionId)
 		if err != nil {
 			s.WD.Screenshot()
-			return nil, fmt.Errorf("error on keys: %v", err)
+			return false, fmt.Errorf("error on find element: %v", err)
 		}
 
-		return el, nil
+		return ok, nil
 	}
 
-	_, err = keys()
+	ok, err := is()
 	if err != nil {
 		s.TK.Errorf("%v", err)
+	}
+
+	return ok
+}
+
+func (s *Step) Until(fn func() bool) {
+	var success bool
+	start := time.Now()
+	end := start.Add(s.Config.WaitForTimeout * time.Second)
+
+	for {
+		success = fn()
+		if success {
+			break
+		}
+
+		if time.Now().After(end) {
+			panic("error on until")
+		}
+
+		time.Sleep(s.Config.WaitForInterval * time.Millisecond)
 	}
 }

@@ -107,6 +107,13 @@ func KeyDown(key string) KeyAction {
 	}
 }
 
+func KeyUp(key string) KeyAction {
+	return KeyAction{
+		"type":  KeyUpAction,
+		"value": key,
+	}
+}
+
 func (w *WebDriver) Action(key string, action ActionType) {
 	err := w.WebClient.Action(key, string(action), w.SessionId)
 	if err != nil {
@@ -134,7 +141,7 @@ func (w *WebDriver) ReleaseAction() {
 func (w *WebDriver) Keys(key string) {
 	err := w.WebClient.Action(key, string(KeyDownAction), w.SessionId)
 	if err != nil {
-		panic(fmt.Sprintf("error on action: %v", err))
+		panic(fmt.Sprintf("error on keys down action: %v", err))
 	}
 
 	err = w.WebClient.ReleaseAction(w.SessionId)
@@ -142,4 +149,3 @@ func (w *WebDriver) Keys(key string) {
 		panic(fmt.Sprintf("error on release action: %v", err))
 	}
 }
-

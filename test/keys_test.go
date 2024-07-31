@@ -61,7 +61,7 @@ func TestKeys(t *testing.T) {
 		t.Fail()
 	}
 
-	clickedEl := el.Keys("hello")
+	clickedEl := el.Input("hello")
 	if clickedEl == nil {
 		t.Fail()
 	}

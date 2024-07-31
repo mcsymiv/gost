@@ -441,7 +441,7 @@ func (c *WebClient) Click(sessionId, elementId string) error {
 	return nil
 }
 
-func (c *WebClient) Keys(keys, sessionId, elementId string) error {
+func (c *WebClient) Input(keys, sessionId, elementId string) error {
 	p := fmt.Sprintf(sendKeysEndpoint, c.WebConfig.WebServerAddr, sessionId, elementId)
 	d := marshalData(data.SendKeys{
 		Text: keys,
@@ -491,6 +491,9 @@ func (c *WebClient) Script(script, sessionId string, args ...interface{}) error 
 	return nil
 }
 
+// randSeq
+// generates pseudo-random string
+// for screenshot name
 func randSeq(n int) string {
 	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
@@ -524,7 +527,6 @@ func (c *WebClient) Screenshot(sessionId string) error {
 		return fmt.Errorf("error on decode: %v", err)
 	}
 
-	fmt.Println("pathh", config.Config.ScreenshotsPath)
 	// Create a new file for the output JPEG image
 	// TODO: upd randSeq, use meaninful screenshot name
 	outputFile, err := os.Create(fmt.Sprintf("%s/%s_%s.jpg", config.Config.ScreenshotsPath, randSeq(8), time.Now().Format("2006_01_02_15:04:05")))
@@ -574,37 +576,6 @@ func (c *WebClient) Action(keys, action, sessionId string) error {
 			Key:  string(key),
 		})
 	}
-	p := fmt.Sprintf(actionEndpoint, c.WebConfig.WebServerAddr, sessionId)
-
-	data := marshalData(map[string]interface{}{
-		"actions": []interface{}{
-			map[string]interface{}{
-				"type":    "key",
-				"id":      "default keyboard",
-				"actions": actions,
-			}},
-	})
-
-	res, err := c.Post(p, bytes.NewReader(data))
-	if err != nil {
-		return fmt.Errorf("error on active request: %v", err)
-	}
-
-	defer res.Body.Close()
-
-	return nil
-}
-
-func (c *WebClient) Actions2(keys, action, sessionId string) error {
-	actions := make([]data.KeyAction, 0, len(keys))
-
-	for _, key := range keys {
-		actions = append(actions, data.KeyAction{
-			Type: action,
-			Key:  string(key),
-		})
-	}
-
 	p := fmt.Sprintf(actionEndpoint, c.WebConfig.WebServerAddr, sessionId)
 
 	data := marshalData(map[string]interface{}{
