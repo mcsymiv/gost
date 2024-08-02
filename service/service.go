@@ -42,6 +42,7 @@ func Handler() http.Handler {
 	sm.HandleFunc("POST /session", wd.post())
 	sm.HandleFunc("DELETE /session/{sessionId}", wd.delete())
 	sm.HandleFunc("POST /session/{sessionId}/url", wd.post())
+
 	sm.Handle("POST /session/{sessionId}/element", logger(wd.retrier(&verifyStatusOk{})))
 	sm.HandleFunc("GET /session/{sessionId}/element/active", wd.get())
 

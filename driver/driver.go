@@ -141,6 +141,7 @@ func (w *WebDriver) FindElement(selector *data.Selector) *WebElement {
 	}
 
 	return &WebElement{
+		WebDriver:    w,
 		WebElementId: eId,
 	}
 }

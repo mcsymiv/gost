@@ -48,7 +48,7 @@ func Strategy(value string) *data.Selector {
 	}
 
 	// if ok, m := checkSubstrings(value, ".", "#", "[", "]"); ok || m > 0 {
-	if value[0] == '[' {
+	if value[0] == '[' || value[0] == '#' {
 		s.Using = data.ByCssSelector
 		return s
 	}

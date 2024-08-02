@@ -54,7 +54,7 @@ func DefaultCapabilities() *Capabilities {
 				BrowserName:         "firefox",
 				PageLoad:            "eager",
 				Timeouts: Timeouts{
-					Implicit: 10000,
+					Implicit: 1000,
 				},
 			},
 		},

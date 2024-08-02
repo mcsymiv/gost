@@ -23,8 +23,28 @@ import (
 	"github.com/mcsymiv/gost/data"
 )
 
+var (
+	ErrorElementId        = "error on map element id.\nValue: %v.\nError: %v"
+	ErrorFindElement      = "error on find element id.\n Value: %v.\nError: %v"
+	ErrorClick            = "error on click element.\nError: %v"
+	ErrorSendKeys         = "error on send keys.\nError: %v"
+	ErrorAttribute        = "error on attribute element.\nError: %v"
+	ErrorScriptExecute    = "error on script execute.\nError: %v"
+	ErrorScreenshot       = "error on screenshot.\nError: %v"
+	ErrorActiveElement    = "error on active element.\nValue: %v.\nError: %v"
+	ErrorTextElement      = "error on text element.\nError: %v"
+	ErrorAction           = "error on action.\nError: %v"
+	ErrorDisplayedElement = "error on displayed element.\nError: %v"
+	ErrorDeleteSession    = "error on delete session.\nError: %v"
+	ErrorCreateSession    = "error on create session.\nError: %v"
+	ErrorStatus           = "error on webdriver status.\nError: %v"
+	ErrorTab              = "error on tabs.\nError: %v"
+	ErrorOpenUrl          = "error on open url.\nError: %v"
+)
+
 const (
 	// W3C Session
+	statusEndpoint     = "%s/status"
 	sessionEndpoint    = "%s/session"
 	quitEndpoint       = "%s/session/%s"
 	urlEndpoint        = "%s/session/%s/url"
@@ -138,24 +158,24 @@ type HttpResponse struct {
 
 func ElementID(v map[string]string) (string, error) {
 	id, ok := v[config.WebElementIdentifier]
-	if !ok || id == "" {
-		return "", fmt.Errorf("Error on find element: %v", v)
+	if id == "" || !ok {
+		return "", fmt.Errorf(ErrorElementId, v)
 	}
 	return id, nil
 }
 
-func ElementsID(v []map[string]string) []string {
+func ElementsID(v []map[string]string) ([]string, error) {
 	var els []string
 
 	for _, el := range v {
 		id, ok := el[config.WebElementIdentifier]
 		if !ok || id == "" {
-			panic(fmt.Sprintf("Error on find elements: %v", v))
+			return nil, fmt.Errorf(ErrorElementId, v)
 		}
 		els = append(els, id)
 	}
 
-	return els
+	return els, nil
 }
 
 func (self *WebClient) addHeaders(req *http.Request, headers map[string]string) {
@@ -240,7 +260,7 @@ func (c *WebClient) Url(url, sessionId string) (*data.Url, error) {
 	u := fmt.Sprintf(urlEndpoint, c.WebConfig.WebServerAddr, sessionId)
 	res, err := c.Post(u, bytes.NewBuffer(b))
 	if err != nil {
-		return nil, fmt.Errorf("error on url request: %v", err)
+		return nil, fmt.Errorf(ErrorOpenUrl, err)
 	}
 
 	reply := new(struct{ Value string })
@@ -257,7 +277,7 @@ func (c *WebClient) Open(url, sessionId string) (*data.Url, error) {
 
 	res, err := c.Post(p, bytes.NewBuffer(b))
 	if err != nil {
-		return nil, fmt.Errorf("error on open request: %v", err)
+		return nil, fmt.Errorf(ErrorOpenUrl, err)
 	}
 
 	defer res.Body.Close()
@@ -276,7 +296,7 @@ func (c *WebClient) NewTab(sessionId string) error {
 
 	res, err := c.Post(p, bytes.NewBuffer(b))
 	if err != nil {
-		return fmt.Errorf("error on open request: %v", err)
+		return fmt.Errorf(ErrorTab, err)
 	}
 
 	defer res.Body.Close()
@@ -290,7 +310,7 @@ func (c *WebClient) Tabs(sessionId string) ([]string, error) {
 
 	res, err := c.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("error on tabs request: %v", err)
+		return nil, fmt.Errorf(ErrorTab, err)
 	}
 
 	defer res.Body.Close()
@@ -303,7 +323,7 @@ func (c *WebClient) Tabs(sessionId string) ([]string, error) {
 func (c *WebClient) Tab(n int, sessionId string) error {
 	tabs, err := c.Tabs(sessionId)
 	if err != nil {
-		return fmt.Errorf("error on tabs request: %v", err)
+		return fmt.Errorf(ErrorTab, err)
 	}
 
 	tab := marshalData(map[string]string{"handle": tabs[n]})
@@ -311,7 +331,7 @@ func (c *WebClient) Tab(n int, sessionId string) error {
 
 	res, err := c.Post(url, bytes.NewReader(tab))
 	if err != nil {
-		return fmt.Errorf("error on tab request: %v", err)
+		return fmt.Errorf(ErrorTab, err)
 	}
 
 	defer res.Body.Close()
@@ -327,7 +347,7 @@ func (c *WebClient) FindElement(selector *data.Selector, sessionId string) (stri
 	p := fmt.Sprintf(findElementEndpoint, c.WebConfig.WebServerAddr, sessionId)
 	res, err := c.Post(p, bytes.NewBuffer(body))
 	if err != nil {
-		return "", fmt.Errorf("error on find element request: %v", err)
+		return "", fmt.Errorf(ErrorFindElement, err)
 	}
 
 	defer res.Body.Close()
@@ -340,21 +360,43 @@ func (c *WebClient) FindElement(selector *data.Selector, sessionId string) (stri
 		if c.WebConfig.ScreenshotOnFail {
 			c.Screenshot(sessionId)
 		}
-		return "", fmt.Errorf("error on find element id, Error: %v", reply.Value)
+		return "", fmt.Errorf(ErrorElementId, reply.Value, err)
+	}
+
+	return eId, nil
+}
+
+func (c *WebClient) TryFind(selector *data.Selector, sessionId string) (string, error) {
+	body := marshalData(&data.JsonFindUsing{
+		Using: selector.Using,
+		Value: selector.Value,
+	})
+
+	p := fmt.Sprintf(findElementEndpoint, c.WebConfig.WebServerAddr, sessionId)
+	res, err := c.Post(p, bytes.NewBuffer(body))
+	if err != nil {
+		return "", fmt.Errorf(ErrorFindElement, err)
+	}
+
+	defer res.Body.Close()
+
+	reply := new(struct{ Value map[string]string })
+
+	unmarshalRes(&res.Response, reply)
+	eId, err := ElementID(reply.Value)
+	if err != nil {
+		return "", fmt.Errorf(ErrorFindElement, reply.Value, err)
 	}
 
 	return eId, nil
 }
 
 func (c *WebClient) Status() (*data.DriverStatus, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/status", c.WebConfig.WebServerAddr), nil)
-	if err != nil {
-		return nil, fmt.Errorf("error on new status request: %v", err)
-	}
+	url := fmt.Sprintf(statusEndpoint, c.WebConfig.WebServerAddr)
 
-	res, err := c.Do(req)
+	res, err := c.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("error on status request: %v", err)
+		return nil, fmt.Errorf(ErrorStatus, err)
 	}
 
 	defer res.Body.Close()
@@ -371,7 +413,7 @@ func (c *WebClient) Session(caps *capabilities.Capabilities) (*data.Session, err
 	url := fmt.Sprintf(sessionEndpoint, c.WebConfig.WebServerAddr)
 	res, err := c.Post(url, bytes.NewBuffer(d))
 	if err != nil {
-		return nil, fmt.Errorf("error on session request: %v", err)
+		return nil, fmt.Errorf(ErrorCreateSession, err)
 	}
 
 	defer res.Body.Close()
@@ -388,7 +430,7 @@ func (c *WebClient) Quit(sessionId string) error {
 	url := fmt.Sprintf(quitEndpoint, c.WebConfig.WebServerAddr, sessionId)
 	res, err := c.Delete(url)
 	if err != nil {
-		return fmt.Errorf("error on delete session request: %v", err)
+		return fmt.Errorf(ErrorDeleteSession, err)
 	}
 
 	defer res.Body.Close()
@@ -399,7 +441,7 @@ func (c *WebClient) IsDisplayed(sessionId, elementId string) (bool, error) {
 	p := fmt.Sprintf(isDisplayedEndpoint, c.WebConfig.WebServerAddr, sessionId, elementId)
 	res, err := c.Get(p)
 	if err != nil {
-		return false, fmt.Errorf("error on find element request: %v", err)
+		return false, fmt.Errorf(ErrorDisplayedElement, err)
 	}
 
 	defer res.Body.Close()
@@ -417,7 +459,7 @@ func (c *WebClient) Is(sessionId, elementId string) (bool, error) {
 		if c.WebConfig.ScreenshotOnFail {
 			c.Screenshot(sessionId)
 		}
-		return false, fmt.Errorf("error on is request: %v", err)
+		return false, fmt.Errorf(ErrorDisplayedElement, err)
 	}
 
 	defer res.Body.Close()
@@ -433,7 +475,7 @@ func (c *WebClient) Click(sessionId, elementId string) error {
 	d := marshalData(data.Empty{})
 	res, err := c.Post(p, bytes.NewBuffer(d))
 	if err != nil {
-		return fmt.Errorf("error on click request: %v", err)
+		return fmt.Errorf(ErrorClick, err)
 	}
 
 	defer res.Body.Close()
@@ -448,7 +490,7 @@ func (c *WebClient) Input(keys, sessionId, elementId string) error {
 	})
 	res, err := c.Post(p, bytes.NewBuffer(d))
 	if err != nil {
-		return fmt.Errorf("error on keys request: %v", err)
+		return fmt.Errorf(ErrorSendKeys, err)
 	}
 
 	defer res.Body.Close()
@@ -460,7 +502,7 @@ func (c *WebClient) Attr(attr, sessionId, elementId string) (string, error) {
 	p := fmt.Sprintf(attributeEndpoint, c.WebConfig.WebServerAddr, sessionId, elementId, attr)
 	res, err := c.Get(p)
 	if err != nil {
-		return "", fmt.Errorf("error on attribute request: %v", err)
+		return "", fmt.Errorf(ErrorAttribute, err)
 	}
 
 	defer res.Body.Close()
@@ -484,7 +526,7 @@ func (c *WebClient) Script(script, sessionId string, args ...interface{}) error 
 	p := fmt.Sprintf(syncScriptEndpoint, c.WebConfig.WebServerAddr, sessionId)
 	res, err := c.Post(p, bytes.NewBuffer(body))
 	if err != nil {
-		return fmt.Errorf("error on find element request: %v", err)
+		return fmt.Errorf(ErrorScriptExecute, err)
 	}
 
 	defer res.Body.Close()
@@ -548,7 +590,7 @@ func (c *WebClient) Active(sessionId string) (string, error) {
 	p := fmt.Sprintf(activeEndpoint, c.WebConfig.WebServerAddr, sessionId)
 	res, err := c.Get(p)
 	if err != nil {
-		return "", fmt.Errorf("error on active request: %v", err)
+		return "", fmt.Errorf(ErrorActiveElement, err)
 	}
 
 	defer res.Body.Close()
@@ -561,7 +603,7 @@ func (c *WebClient) Active(sessionId string) (string, error) {
 		if c.WebConfig.ScreenshotOnFail {
 			c.Screenshot(sessionId)
 		}
-		return "", fmt.Errorf("error on find active element id, Error: %v", reply.Value)
+		return "", fmt.Errorf(ErrorActiveElement, reply.Value, err)
 	}
 
 	return eId, nil
@@ -589,7 +631,7 @@ func (c *WebClient) Action(keys, action, sessionId string) error {
 
 	res, err := c.Post(p, bytes.NewReader(data))
 	if err != nil {
-		return fmt.Errorf("error on active request: %v", err)
+		return fmt.Errorf(ErrorAction, err)
 	}
 
 	defer res.Body.Close()
@@ -602,7 +644,7 @@ func (c *WebClient) ReleaseAction(sessionId string) error {
 
 	res, err := c.Delete(p)
 	if err != nil {
-		return fmt.Errorf("error on active request: %v", err)
+		return fmt.Errorf(ErrorActiveElement, err)
 	}
 
 	defer res.Body.Close()
@@ -615,7 +657,7 @@ func (c *WebClient) Text(sessionId, elementId string) (string, error) {
 
 	res, err := c.Get(p)
 	if err != nil {
-		return "", fmt.Errorf("error on text request: %v", err)
+		return "", fmt.Errorf(ErrorTextElement, err)
 	}
 
 	defer res.Body.Close()

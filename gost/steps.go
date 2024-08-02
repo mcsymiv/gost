@@ -49,7 +49,7 @@ func (s *Step) Click(selector string) {
 		eId, err := s.WD.WebClient.FindElement(selector, s.WD.SessionId)
 		if err != nil {
 			s.WD.Screenshot()
-			return nil, fmt.Errorf("error on find element: %v", err)
+			return nil, err
 		}
 
 		return &driver.WebElement{
@@ -60,6 +60,52 @@ func (s *Step) Click(selector string) {
 
 	el, err := find()
 	if err != nil {
+		s.TK.Error(err)
+	}
+
+	click := func() (*driver.WebElement, error) {
+		err := s.WD.WebClient.Click(s.WD.SessionId, el.WebElementId)
+		if err != nil {
+			s.WD.Screenshot()
+			return nil, fmt.Errorf("error on click: %v", err)
+		}
+
+		return el, nil
+	}
+
+	_, err = click()
+	if err != nil {
+		s.TK.Errorf("%v", err)
+	}
+}
+
+func (s *Step) TryClick(selectors ...string) {
+	find := func(sel string) (*driver.WebElement, error) {
+		selector := driver.Strategy(sel)
+		eId, err := s.WD.WebClient.FindElement(selector, s.WD.SessionId)
+		if err != nil {
+			s.WD.Screenshot()
+			return nil, fmt.Errorf("error on find element: %v", err)
+		}
+
+		return &driver.WebElement{
+			WebDriver:    s.WD,
+			WebElementId: eId,
+		}, nil
+	}
+
+	var el *driver.WebElement
+	var err error
+	for _, selector := range selectors {
+		el, err = find(selector)
+		if err != nil {
+			continue
+		}
+
+		break
+	}
+
+	if el == nil || err != nil {
 		s.TK.Errorf("%v", err)
 	}
 
@@ -79,7 +125,10 @@ func (s *Step) Click(selector string) {
 	}
 }
 
-func (s *Step) Type(text, selector string) {
+// Type
+// Sends keys onto active element
+// after click
+func (s *Step) Input(text, selector string) {
 	find := func() (*driver.WebElement, error) {
 		selector := driver.Strategy(selector)
 		eId, err := s.WD.WebClient.FindElement(selector, s.WD.SessionId)
