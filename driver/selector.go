@@ -2,6 +2,7 @@ package driver
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/mcsymiv/gost/data"
 )
@@ -53,8 +54,17 @@ func Strategy(value string) *data.Selector {
 		return s
 	}
 
+	txt := []string{
+		"//*[text()='%[1]s']",
+		"//*[@placeholder='%[1]s']",
+		"//*[@value='%[1]s']",
+		"//*[@title='%[1]s']",
+		"//*[@aria-label='%[1]s']",
+	}
+	xpathText := strings.Join(txt, " | ")
+
 	s.Using = data.ByXPath
-	s.Value = fmt.Sprintf("//*[text()='%[1]s'] | //*[@placeholder='%[1]s'] | //*[@value='%[1]s'] | //*[@title='%[1]s']", value)
+	s.Value = fmt.Sprintf(xpathText, value)
 
 	return s
 }

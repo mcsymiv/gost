@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/mcsymiv/gost/capabilities"
 	"github.com/mcsymiv/gost/client"
@@ -161,6 +162,7 @@ func (w *WebDriver) F(s string) *WebElement {
 
 func (w *WebElement) IsDisplayed() bool {
 	ok, err := w.WebClient.IsDisplayed(w.SessionId, w.WebElementId)
+	fmt.Println(ok)
 	if err != nil {
 		panic(fmt.Sprintf("error on isdisplayed: %v", err))
 	}
@@ -188,6 +190,26 @@ func (w *WebElement) Click() *WebElement {
 	}
 
 	return w
+}
+
+func (w *WebDriver) Cl(s string) *WebElement {
+	selector := Strategy(s)
+	eId, err := w.WebClient.FindElement(selector, w.SessionId)
+	if err != nil {
+		panic(fmt.Sprintf("error on find element: %v", err))
+	}
+
+	el := &WebElement{
+		WebDriver:    w,
+		WebElementId: eId,
+	}
+
+	err = w.WebClient.Click(w.SessionId, el.WebElementId)
+	if err != nil {
+		panic(fmt.Sprintf("error on click: %v", err))
+	}
+
+	return el
 }
 
 func (w *WebElement) Input(keys string) *WebElement {
@@ -264,4 +286,23 @@ func (w *WebElement) Text() string {
 	}
 
 	return txt
+}
+
+func (w *WebDriver) Until(fn func() bool) {
+	var success bool
+	start := time.Now()
+	end := start.Add(config.Config.WaitForTimeout * time.Second)
+
+	for {
+		success = fn()
+		if success {
+			break
+		}
+
+		if time.Now().After(end) {
+			panic("error on until")
+		}
+
+		time.Sleep(config.Config.WaitForInterval * time.Millisecond)
+	}
 }
