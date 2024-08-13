@@ -22,7 +22,7 @@ func TestHarvest(t *testing.T) {
 	d.F("Password").Input(os.Getenv("HARVEST_PASS"))
 	d.Cl("//*[@id='log-in']")
 	d.Cl("//*[@id='calendar-button']")
-	d.Cl(fmt.Sprint("%s %s", month, day))
+	d.Cl(fmt.Sprintf("%s %s", month, day))
 	d.Cl("Copy rows from most recent timesheet")
 	d.Cl("Edit entry")
 	d.F("hours").Input("8:00")
