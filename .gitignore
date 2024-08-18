@@ -2,6 +2,7 @@
 # configuration variables
 # created per client/user
 .env
+.config
 
 # firefox or chrome logs
 # each run overrides file

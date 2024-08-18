@@ -17,7 +17,7 @@ func findSuite(suite string) string {
 	var suites []string
 	var env string
 
-	for i := 1; i < 11; i++ {
+	for i := 1; i < 12; i++ {
 		suites = append(suites, os.Getenv(fmt.Sprintf("SUITE_NAME_%s", strconv.Itoa(i))))
 	}
 
@@ -49,10 +49,9 @@ func trigger(action, env, suite string) {
 	d.F("[id='search-projects']").Input(env)
 
 	sName := findSuite(suite)
-	d.F(fmt.Sprintf("//*[@data-test='sidebar']//span[contains(text(),'%s')]", sName)).Is().Click()
-	d.F(fmt.Sprintf("//h1//*[text()='%s']", sName)).IsDisplayed()
+	d.F(fmt.Sprintf("//*[@data-test='sidebar']//span[contains(text(),'%s')]", sName)).Click()
 
-	d.Cl("Edit configuration...")
+	d.F("Edit configuration...").Is().Click()
 	d.Cl("Triggers")
 	d.Cl("[id*='triggerActionsTRIGGER']")
 
@@ -62,6 +61,31 @@ func trigger(action, env, suite string) {
 	}
 
 	d.Cl("Enable trigger")
+
+	time.Sleep(time.Second * 3)
+}
+
+func run(env, suite string) {
+	d, tear := gost.Gost(
+		capabilities.MozPrefs("intl.accept_languages", "en-GB"),
+	)
+	defer tear()
+
+	host := os.Getenv("TC_HOST")
+	d.Url(fmt.Sprintf("%s%s", host, "/login.html"))
+	d.Cl("Log in using Azure Active Directory")
+	d.F("[aria-label^='Ending with']").Input(os.Getenv("TC_LOGIN")).Input(driver.EnterKey)
+	d.F("[aria-label^='Enter the password']").Input(os.Getenv("TC_PASS")).Input(driver.EnterKey)
+	d.Cl("Yes")
+	d.F("Projects").Click()
+	d.F("[id='search-projects']").Input(env)
+
+	sName := findSuite(suite)
+	d.F(fmt.Sprintf("//*[@data-test='sidebar']//span[contains(text(),'%s')]", sName)).Is().Click()
+	// d.F(fmt.Sprintf("//h1//*[text()='%s']", sName)).IsDisplayed()
+
+	d.F("Run").IsDisplayed()
+	d.Cl("Run")
 
 	time.Sleep(time.Second * 3)
 }
@@ -128,13 +152,14 @@ func TestTc(t *testing.T) {
 			trigger(args[1], args[2], args[3])
 		case "result":
 			result(args[1])
+		case "run":
+			run("dev01", "api")
+		default:
+			fmt.Println(`
+				Usage:
+				make tc trigger enable dev01 smoke
+				make tc result dev01
+			`)
 		}
 	}
-
-	fmt.Println(`
-		Usage:
-		make tc trigger enable dev01 smoke
-		make tc result dev01
-	`)
-
 }

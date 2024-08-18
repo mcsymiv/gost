@@ -40,6 +40,10 @@ type WebConfig struct {
 	// DriverLogsFile
 	DriverLogsFile string
 
+	// ConfigFile
+	// name of cinfiguration file
+	ConfigFile string
+
 	// ScreenshotOnFail
 	// used in find element strategy
 	// takes screenshot and writes to artifacts
@@ -88,6 +92,7 @@ func DefaultConfig() *WebConfig {
 	return &WebConfig{
 		WebServerAddr:    "http://localhost:8080",
 		WebDriverAddr:    "http://localhost:4444",
+		ConfigFile:       ".config",
 		DriverLogsFile:   "../driver.logs",
 		ScreenshotOnFail: true,
 		WaitForTimeout:   20,
@@ -101,7 +106,7 @@ func DefaultConfig() *WebConfig {
 func NewConfig(confFn ...ConfigFunc) *WebConfig {
 	var conf *WebConfig
 
-	err := loadEnv("../", ".env")
+	err := loadEnv("../", ".config")
 	if err != nil {
 		conf = DefaultConfig()
 
