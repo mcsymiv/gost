@@ -92,14 +92,13 @@ func DefaultConfig() *WebConfig {
 	return &WebConfig{
 		WebServerAddr:    "http://localhost:8080",
 		WebDriverAddr:    "http://localhost:4444",
-		ConfigFile:       ".config",
 		DriverLogsFile:   "../driver.logs",
 		ScreenshotOnFail: true,
 		WaitForTimeout:   20,
 		WaitForInterval:  200,
-		JsFilesPath:      "../js",
-		ScreenshotsPath:  "../screenshots",
-		RecordsPath:      "../records",
+		JsFilesPath:      "../",
+		ScreenshotsPath:  "../",
+		RecordsPath:      "../",
 	}
 }
 
