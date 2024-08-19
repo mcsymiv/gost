@@ -40,23 +40,29 @@ func DefaultConfig() *WebConfig {
     // WebDriver default address
     WebDriverAddr:    "http://localhost:4444",
 
-    // File name in the root of project where webdriver logs will be added
+    // File name in the root of project where webdriver logs stored
+    // Each new test run will override previous one
     DriverLogsFile:   "../driver.logs",
 
-    // When set to 'true' screenshot will be made on failed 'find element' call
+    // When set to 'true' screenshot will be made
+    // on each failed 'find element' call
     ScreenshotOnFail: true,
 
     // Defines explicit timeout in seconds to wait for webelement
-    // WebService will retry to find element within this timeframe, i.e. 20 seconds
+    // WebService will retry to find element
+    // within this timeframe, i.e. 20 seconds
     WaitForTimeout:   20,
 
-    // Defines a pause in milliseconds between each retry calls to POST /session/{sessionId}/element
+    // Defines a pause in milliseconds
+    // between each retry calls to POST /session/{sessionId}/element
     WaitForInterval:  200,
 
-    // Directory (in this case a root) where you can store .js scripts
+    // Directory (in this case a root)
+    // where you can store .js scripts
     JsFilesPath:      "../",
 
-    // Directory where screenshots will be stored after each failed attempt to find element
+    // Directory where screenshots will be stored
+    // after each failed attempt to find element
     ScreenshotsPath:  "../",
 
     // Directory where Chrome record.json files are stored
@@ -66,7 +72,7 @@ func DefaultConfig() *WebConfig {
 ```
 
 ### Usage
-Run the test with `go test` command:
+Run test with `go test` command:
 ```
 go test -v -count=1 test/driver.go -run TestDriver
 ``` 
