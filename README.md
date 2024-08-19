@@ -103,7 +103,7 @@ make driver
 ```
 
 TestDriver  
-```
+```golang
 func TestDriver(t *testing.T) {
 
     // initializes service, client, config, and starts driver
