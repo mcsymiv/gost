@@ -90,7 +90,7 @@ TestDriver
 ```
 func TestDriver(t *testing.T) {
 
-    // this line initializes service, client, driver
+    // initializes service, client, config, and starts driver
     d, tear := gost.Gost(
         capabilities.Browser("chrome"),
     )
