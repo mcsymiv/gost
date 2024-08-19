@@ -23,6 +23,22 @@ flowchart LR
 ### Support 
 Chrome and Firefox
 
+So far, browser/driver versioning done manually.
+In order to run tests you need to have `chromedriver`/`geckodriver`. 
+In my case, `chromedriver` and `geckodriver` binaries added to the `PATH`.
+```golang
+var GeckoDriverPath string = "geckodriver"
+var ChromeDriverPath string = "chromedriver"
+...
+...
+...
+if cap.Capabilities.AlwaysMatch.BrowserName == "firefox" {
+    cmdArgs = append(cmdArgs, GeckoDriverPath, "--port", "4444", "--log", "trace")
+} else {
+    cmdArgs = append(cmdArgs, ChromeDriverPath, fmt.Sprintf("--port=%s", "4444"))
+}
+```
+
 ### Configuration 
 Congifuration is done through `.config` file in the root directory.
 This file can be named anything, e.g.: ".env", "settings", "driver.conf",
