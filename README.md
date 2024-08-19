@@ -1,17 +1,71 @@
-#### gost
-Testing framework based on [W3C Driver Protocol](https://w3c.github.io/webdriver/)
+### gost
+Testing framework based on [W3C Driver Protocol](https://w3c.github.io/webdriver/) 
 
-##### Support 
+```mermaid
+flowchart LR
+    Browser["`
+      Chrome
+      Firefox
+    `"]
+    Webdriver["`
+      Chromedriver
+      Geckodriver
+    `"]
+    WebService["`Web Service`"]
+    WebClient["`Web Client`"]
+    Tests["`Tests`"]
+    Browser<-->Webdriver;
+    Webdriver<-->WebService;
+    WebService<-->WebClient;
+    WebClient<-->Tests;
+```
+
+### Support 
 Chrome and Firefox
 
-##### Configuration 
+### Configuration 
 Congifuration is done through `.config` file in the root directory.
 This file can be named anything, e.g.: ".env", "settings", "driver.conf",
 as long as it's name is set in `config` package and it's variables are
 correctly referenced.
 
+If no '.config' file defined, default values will be set:
+```golang
+func DefaultConfig() *WebConfig {
+  return &WebConfig{
 
-##### Usage
+    // WebServer default address
+    WebServerAddr:    "http://localhost:8080",
+
+    // WebDriver default address
+    WebDriverAddr:    "http://localhost:4444",
+
+    // File name in the root of project where webdriver logs will be added
+    DriverLogsFile:   "../driver.logs",
+
+    // When set to 'true' screenshot will be made on failed 'find element' call
+    ScreenshotOnFail: true,
+
+    // Defines explicit timeout in seconds to wait for webelement
+    // WebService will retry to find element within this timeframe, i.e. 20 seconds
+    WaitForTimeout:   20,
+
+    // Defines a pause in milliseconds between each retry calls to POST /session/{sessionId}/element
+    WaitForInterval:  200,
+
+    // Directory (in this case a root) where you can store .js scripts
+    JsFilesPath:      "../",
+
+    // Directory where screenshots will be stored after each failed attempt to find element
+    ScreenshotsPath:  "../",
+
+    // Directory where Chrome record.json files are stored
+    RecordsPath:      "../",
+  }
+}
+```
+
+### Usage
 Run the test with `go test` command:
 ```
 go test -v -count=1 test/driver.go -run TestDriver
