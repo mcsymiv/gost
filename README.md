@@ -31,15 +31,15 @@ TestDriver
 func TestDriver(t *testing.T) {
 
     // this line initializes service, client, driver
-	d, tear := gost.Gost(
+    d, tear := gost.Gost(
         capabilities.Browser("chrome"),
-	)
+    )
 
     // quits driver and gracefully shuts down service
-	defer tear()
+    defer tear()
 
     // opens new tab
-	d.Open("https://www.google.com")
+    d.Open("https://www.google.com")
 
     // finds and clicks on element 
     // with text/value/aria-label "Gmail" if exists,

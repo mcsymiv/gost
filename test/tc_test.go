@@ -105,12 +105,12 @@ func result(testEnv string) {
 		// os.Getenv("SUITE_NAME_1"), // smoke
 		os.Getenv("SUITE_NAME_2"), // regress
 		os.Getenv("SUITE_NAME_3"), // single
-		// os.Getenv("SUITE_NAME_4"), // m
-		// os.Getenv("SUITE_NAME_5"),  // ol
-		// os.Getenv("SUITE_NAME_6"), // hil
+		os.Getenv("SUITE_NAME_4"), // m
+		os.Getenv("SUITE_NAME_5"), // ol
+		os.Getenv("SUITE_NAME_6"), // hil
 		// os.Getenv("SUITE_NAME_7"), // gm
-		// os.Getenv("SUITE_NAME_8"), // business
-		// os.Getenv("SUITE_NAME_9"),  // visual
+		os.Getenv("SUITE_NAME_8"), // business
+		os.Getenv("SUITE_NAME_9"), // visual
 		// os.Getenv("SUITE_NAME_10"), // iframe
 	}
 
@@ -153,7 +153,7 @@ func TestTc(t *testing.T) {
 		case "result":
 			result(args[1])
 		case "run":
-			run("dev01", "api")
+			run(args[1], args[2])
 		default:
 			fmt.Println(`
 				Usage:
