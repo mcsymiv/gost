@@ -155,15 +155,16 @@ func (w *WebDriver) F(s string) *WebElement {
 	}
 
 	return &WebElement{
-		WebDriver:    w,
-		WebElementId: eId,
+		WebDriver:          w,
+		WebElementId:       eId,
+		WebElementSelector: selector,
 	}
 }
 
 // Next
 // finds text-based element from element
 func (w *WebElement) Next(s string) *WebElement {
-	by := NextXpathStrategy(s)
+	by := NextXpathTextStrategy(s)
 
 	eId, err := w.WebClient.FromElement(by, w.SessionId, w.WebElementId)
 	if err != nil {
@@ -171,8 +172,24 @@ func (w *WebElement) Next(s string) *WebElement {
 	}
 
 	return &WebElement{
-		WebDriver:    w.WebDriver,
-		WebElementId: eId,
+		WebDriver:          w.WebDriver,
+		WebElementId:       eId,
+		WebElementSelector: by,
+	}
+}
+
+func (w *WebElement) Parent() *WebElement {
+	by := ParentXpathTextStrategy(w.WebElementSelector)
+
+	eId, err := w.WebClient.FromElement(by, w.SessionId, w.WebElementId)
+	if err != nil {
+		panic(fmt.Sprintf("error on find element: %v", err))
+	}
+
+	return &WebElement{
+		WebDriver:          w.WebDriver,
+		WebElementId:       eId,
+		WebElementSelector: by,
 	}
 }
 

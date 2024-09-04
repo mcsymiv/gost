@@ -69,7 +69,7 @@ func Strategy(value string) *data.Selector {
 	return s
 }
 
-func NextXpathStrategy(value string) *data.Selector {
+func NextXpathTextStrategy(value string) *data.Selector {
 	var s *data.Selector = &data.Selector{}
 
 	txt := []string{
@@ -83,6 +83,17 @@ func NextXpathStrategy(value string) *data.Selector {
 
 	s.Using = data.ByXPath
 	s.Value = fmt.Sprintf(xpathText, value)
+
+	return s
+}
+
+func ParentXpathTextStrategy(sel *data.Selector) *data.Selector {
+	var s *data.Selector = &data.Selector{}
+
+	xpathText := "(" + sel.Value + ")/.."
+
+	s.Using = data.ByXPath
+	s.Value = xpathText
 
 	return s
 }
