@@ -1,4 +1,4 @@
-.PHONY: home driver rec harvest tc
+.PHONY: home driver rec harvest tc gc bg
 
 # parses and passes arguments to "make home @args"
 # Ex.: 
@@ -13,7 +13,7 @@
 # 	5: -test.run=TestHome
 # 	6: hello
 # If the first argument is "run"...
-ifneq (,$(filter $(firstword $(MAKECMDGOALS)), home harvest tc))
+ifneq (,$(filter $(firstword $(MAKECMDGOALS)), home harvest tc gc bg))
 # ifeq (home,$(firstword $(MAKECMDGOALS)))
   # use the rest as arguments for "run"
   args := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
@@ -32,3 +32,9 @@ harvest:
 
 tc:
 	go test -v -count=1 test/tc_test.go -run TestTc $(args)
+
+gc:
+	go test -v -count=1 test/gc_test.go -run TestGc $(args)
+
+bg:
+	go test -v -count=1 test/bg_test.go -run TestBg $(args)

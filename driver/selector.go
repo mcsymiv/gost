@@ -69,6 +69,24 @@ func Strategy(value string) *data.Selector {
 	return s
 }
 
+func NextXpathStrategy(value string) *data.Selector {
+	var s *data.Selector = &data.Selector{}
+
+	txt := []string{
+		".//*[text()='%[1]s']",
+		".//*[@placeholder='%[1]s']",
+		".//*[@value='%[1]s']",
+		".//*[@title='%[1]s']",
+		".//*[@aria-label='%[1]s']",
+	}
+	xpathText := strings.Join(txt, " | ")
+
+	s.Using = data.ByXPath
+	s.Value = fmt.Sprintf(xpathText, value)
+
+	return s
+}
+
 // XPathTextStrategy
 // text/value based find xPathTextStrategy
 // *[text()='%[1]s']

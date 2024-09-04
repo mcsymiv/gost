@@ -52,12 +52,14 @@ func Cmd(caps *capabilities.Capabilities, conf *config.WebConfig) (*exec.Cmd, er
 func driverCommand(cap *capabilities.Capabilities) []string {
 	// when calling /bin/zsh -c command
 	// command arguments will be ignored
-	var cmdArgs []string = []string{}
+	var cmdArgs []string = []string{
+		// -c
+	}
 
 	if cap.Capabilities.AlwaysMatch.BrowserName == "firefox" {
-		cmdArgs = append(cmdArgs, GeckoDriverPath, "--port", "4444", "--log", "trace")
+		cmdArgs = append(cmdArgs, GeckoDriverPath, "--port", config.Config.WebDriverPort, "--log", "trace")
 	} else {
-		cmdArgs = append(cmdArgs, ChromeDriverPath, fmt.Sprintf("--port=%s", "4444"))
+		cmdArgs = append(cmdArgs, ChromeDriverPath, fmt.Sprintf("--port=%s", config.Config.WebDriverPort))
 	}
 
 	// redirect output argumetns ignored when used in exec.Command

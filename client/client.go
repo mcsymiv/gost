@@ -58,6 +58,7 @@ const (
 	clickEndpoint       = "%s/session/%s/element/%s/click"
 	sendKeysEndpoint    = "%s/session/%s/element/%s/value"
 	attributeEndpoint   = "%s/session/%s/element/%s/attribute/%s"
+	fromElementEndpoint = "%s/session/%s/element/%s/element"
 
 	// W3C Window
 	windowEndpoint        = "%s/session/%s/window"
@@ -105,23 +106,6 @@ type WebClient struct {
 // newClientV2
 // new client init without Session param
 func NewClient() *WebClient {
-	return &WebClient{
-		WebConfig:          config.Config,
-		RequestReaderLimit: 4096,
-
-		HTTPClient: &http.Client{
-			Transport: &retry{
-				maxRetries: 3,
-				delay:      time.Duration(config.Config.WaitForInterval * time.Millisecond),
-				next: &loggin{
-					next: http.DefaultTransport,
-				},
-			},
-		},
-	}
-}
-
-func WebDriverClient() *WebClient {
 	return &WebClient{
 		WebConfig:          config.Config,
 		RequestReaderLimit: 4096,
@@ -345,6 +329,34 @@ func (c *WebClient) FindElement(selector *data.Selector, sessionId string) (stri
 	})
 
 	p := fmt.Sprintf(findElementEndpoint, c.WebConfig.WebServerAddr, sessionId)
+	res, err := c.Post(p, bytes.NewBuffer(body))
+	if err != nil {
+		return "", fmt.Errorf(ErrorFindElement, err)
+	}
+
+	defer res.Body.Close()
+
+	reply := new(struct{ Value map[string]string })
+
+	unmarshalRes(&res.Response, reply)
+	eId, err := ElementID(reply.Value)
+	if err != nil {
+		if c.WebConfig.ScreenshotOnFail {
+			c.Screenshot(sessionId)
+		}
+		return "", fmt.Errorf(ErrorElementId, reply.Value, err)
+	}
+
+	return eId, nil
+}
+
+func (c *WebClient) FromElement(selector *data.Selector, sessionId, elementId string) (string, error) {
+	body := marshalData(&data.JsonFindUsing{
+		Using: selector.Using,
+		Value: selector.Value,
+	})
+
+	p := fmt.Sprintf(fromElementEndpoint, c.WebConfig.WebServerAddr, sessionId, elementId)
 	res, err := c.Post(p, bytes.NewBuffer(body))
 	if err != nil {
 		return "", fmt.Errorf(ErrorFindElement, err)

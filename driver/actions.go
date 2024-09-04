@@ -138,6 +138,8 @@ func (w *WebDriver) ReleaseAction() {
 
 }
 
+// Keys
+// sends a sequence of strings/text from driver
 func (w *WebDriver) Keys(key string) {
 	err := w.WebClient.Action(key, string(KeyDownAction), w.SessionId)
 	if err != nil {

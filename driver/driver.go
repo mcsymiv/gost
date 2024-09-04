@@ -64,7 +64,7 @@ func Driver(capsFn ...capabilities.CapabilitiesFunc) *WebDriver {
 		capFn(caps)
 	}
 
-	webclient := client.WebDriverClient()
+	webclient := client.NewClient()
 
 	// TODO: start driver
 	exec, err := command.Cmd(caps, config.Config)
@@ -160,6 +160,22 @@ func (w *WebDriver) F(s string) *WebElement {
 	}
 }
 
+// Next
+// finds text-based element from element
+func (w *WebElement) Next(s string) *WebElement {
+	by := NextXpathStrategy(s)
+
+	eId, err := w.WebClient.FromElement(by, w.SessionId, w.WebElementId)
+	if err != nil {
+		panic(fmt.Sprintf("error on find element: %v", err))
+	}
+
+	return &WebElement{
+		WebDriver:    w.WebDriver,
+		WebElementId: eId,
+	}
+}
+
 func (w *WebElement) IsDisplayed() bool {
 	ok, err := w.WebClient.IsDisplayed(w.SessionId, w.WebElementId)
 	fmt.Println(ok)
@@ -192,6 +208,8 @@ func (w *WebElement) Click() *WebElement {
 	return w
 }
 
+// Cl
+// finds and clicks on element
 func (w *WebDriver) Cl(s string) *WebElement {
 	selector := Strategy(s)
 	eId, err := w.WebClient.FindElement(selector, w.SessionId)
@@ -212,6 +230,8 @@ func (w *WebDriver) Cl(s string) *WebElement {
 	return el
 }
 
+// Input
+// inputs keys, text to a input element
 func (w *WebElement) Input(keys string) *WebElement {
 	err := w.WebClient.Input(keys, w.SessionId, w.WebElementId)
 	if err != nil {
@@ -279,6 +299,8 @@ func (w *WebDriver) Active() *WebElement {
 	}
 }
 
+// Text
+// retrieves text from element
 func (w *WebElement) Text() string {
 	txt, err := w.WebClient.Text(w.SessionId, w.WebElementId)
 	if err != nil {
@@ -304,5 +326,62 @@ func (w *WebDriver) Until(fn func() bool) {
 		}
 
 		time.Sleep(config.Config.WaitForInterval * time.Millisecond)
+	}
+}
+
+func readFile(name string) ([]byte, error) {
+	c, err := os.ReadFile(name)
+	if err != nil {
+		return nil, fmt.Errorf("error on read file: %v", err)
+	}
+
+	return c, nil
+}
+
+// SetValueJs
+// Combines selenium selector strategy
+// And Find element method with JS set value
+func (w *WebDriver) SetValueJs(selector, value string) {
+	el := w.F(selector)
+
+	args := []interface{}{el.WebElementId, value}
+
+	f, err := config.FindFile(config.Config.JsFilesPath, "setValue.js")
+	if err != nil {
+		panic(fmt.Sprintf("error on find file: %v", err))
+	}
+
+	c, err := readFile(f)
+	if err != nil {
+		panic(fmt.Sprintf("error on file read in setValue.js: %v", err))
+	}
+
+	err = w.WebClient.Script(string(c), w.SessionId, args)
+	if err != nil {
+		panic(fmt.Sprintf("error on script: %v", err))
+	}
+}
+
+// ClickJs
+// Combines selenium selector strategy
+// And Find element method with JS click
+func (w *WebDriver) ClickJs(selector string) {
+	el := w.F(selector)
+
+	args := []interface{}{el.WebElementId}
+
+	f, err := config.FindFile(config.Config.JsFilesPath, "click.js")
+	if err != nil {
+		panic(fmt.Sprintf("error on find file: %v", err))
+	}
+
+	c, err := readFile(f)
+	if err != nil {
+		panic(fmt.Sprintf("error on file read in setValue.js: %v", err))
+	}
+
+	err = w.WebClient.Script(string(c), w.SessionId, args)
+	if err != nil {
+		panic(fmt.Sprintf("error on script: %v", err))
 	}
 }

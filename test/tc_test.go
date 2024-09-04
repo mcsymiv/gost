@@ -3,12 +3,14 @@ package test
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/mcsymiv/gost/capabilities"
+	"github.com/mcsymiv/gost/config"
 	"github.com/mcsymiv/gost/driver"
 	"github.com/mcsymiv/gost/gost"
 )
@@ -17,7 +19,7 @@ func findSuite(suite string) string {
 	var suites []string
 	var env string
 
-	for i := 1; i < 12; i++ {
+	for i := 0; i < 11; i++ {
 		suites = append(suites, os.Getenv(fmt.Sprintf("SUITE_NAME_%s", strconv.Itoa(i))))
 	}
 
@@ -81,10 +83,10 @@ func run(env, suite string) {
 	d.F("[id='search-projects']").Input(env)
 
 	sName := findSuite(suite)
-	d.F(fmt.Sprintf("//*[@data-test='sidebar']//span[contains(text(),'%s')]", sName)).Is().Click()
-	// d.F(fmt.Sprintf("//h1//*[text()='%s']", sName)).IsDisplayed()
-
+	d.Cl(fmt.Sprintf("//*[@data-test='sidebar']//span[contains(text(),'%s')]", sName))
+	d.F(fmt.Sprintf("//h1//*[text()='%s']", sName)).IsDisplayed()
 	d.F("Run").IsDisplayed()
+	time.Sleep(time.Second * 3)
 	d.Cl("Run")
 
 	time.Sleep(time.Second * 3)
@@ -155,6 +157,15 @@ func TestTc(t *testing.T) {
 		case "run":
 			run(args[1], args[2])
 		default:
+			fmt.Println(config.Root)
+
+			cmdOut, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+			if err != nil {
+				fmt.Printf(`Error on getting the go-kit base path: %s - %s`, err.Error(), string(cmdOut))
+				return
+			}
+
+			fmt.Println(strings.TrimSpace(string(cmdOut)))
 			fmt.Println(`
 				Usage:
 				make tc trigger enable dev01 smoke
@@ -163,3 +174,4 @@ func TestTc(t *testing.T) {
 		}
 	}
 }
+

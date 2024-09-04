@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"runtime"
 	"strconv"
 	"time"
 )
@@ -24,6 +26,12 @@ const (
 )
 
 var Config *WebConfig
+var (
+	_, b, _, _ = runtime.Caller(0)
+
+	// Root folder of this project
+	Root = filepath.Join(filepath.Dir(b), "../..", "gost")
+)
 
 const ApplicationJson string = "application/json"
 const ContenType string = "Content-Type"
@@ -31,10 +39,12 @@ const ContenType string = "Content-Type"
 type WebConfig struct {
 	// WebServerAddr
 	// Default value http://localhost:8080
+	WebServerPort string
 	WebServerAddr string
 
 	// WebDriverAddr
 	// Default value http://localhost:4444
+	WebDriverPort string
 	WebDriverAddr string
 
 	// DriverLogsFile
@@ -93,12 +103,13 @@ func DefaultConfig() *WebConfig {
 		WebServerAddr:    "http://localhost:8080",
 		WebDriverAddr:    "http://localhost:4444",
 		DriverLogsFile:   "../driver.logs",
+		ConfigFile:       "../.config",
 		ScreenshotOnFail: true,
 		WaitForTimeout:   20,
 		WaitForInterval:  200,
-		JsFilesPath:      "../",
-		ScreenshotsPath:  "../",
-		RecordsPath:      "../",
+		JsFilesPath:      "../js",
+		ScreenshotsPath:  "../screenshots",
+		RecordsPath:      "../records",
 	}
 }
 
@@ -113,7 +124,9 @@ func NewConfig(confFn ...ConfigFunc) *WebConfig {
 	}
 
 	conf = &WebConfig{
+		WebServerPort:   os.Getenv("SERVER_PORT"),
 		WebServerAddr:   fmt.Sprintf("%s:%s", os.Getenv("SERVER_HOST"), os.Getenv("SERVER_PORT")),
+		WebDriverPort:   os.Getenv("DRIVER_PORT"),
 		WebDriverAddr:   fmt.Sprintf("%s:%s", os.Getenv("DRIVER_HOST"), os.Getenv("DRIVER_PORT")),
 		DriverLogsFile:  os.Getenv("DRIVER_LOGS"),
 		WaitForTimeout:  toWaitTimeout(os.Getenv("WAIT_TIMEOUT")),

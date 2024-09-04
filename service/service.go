@@ -38,12 +38,13 @@ func Handler() http.Handler {
 	}
 
 	sm.HandleFunc("GET /hello", wd.get())
-	sm.Handle("GET /status", logger(http.HandlerFunc(wd.get())))
-	sm.HandleFunc("POST /session", wd.post())
+	sm.Handle("GET /status", logger(wd.get()))
+	sm.Handle("POST /session", logger(wd.post()))
 	sm.HandleFunc("DELETE /session/{sessionId}", wd.delete())
 	sm.HandleFunc("POST /session/{sessionId}/url", wd.post())
 
 	sm.Handle("POST /session/{sessionId}/element", logger(wd.retrier(&verifyStatusOk{})))
+	sm.Handle("POST /session/{sessionId}/element/{elementId}/element", logger(wd.retrier(&verifyStatusOk{})))
 	sm.HandleFunc("GET /session/{sessionId}/element/active", wd.get())
 
 	sm.HandleFunc("POST /session/{sessionId}/element/{elementId}/click", wd.post())
