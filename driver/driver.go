@@ -66,7 +66,6 @@ func Driver(capsFn ...capabilities.CapabilitiesFunc) *WebDriver {
 
 	webclient := client.NewClient()
 
-	// TODO: start driver
 	exec, err := command.Cmd(caps, config.Config)
 	if err != nil {
 		panic(fmt.Sprintf("error on starting driver command: %v", err))
@@ -178,8 +177,26 @@ func (w *WebElement) Next(s string) *WebElement {
 	}
 }
 
+// P
+// invokes parent function
+// with N-level times
+func (w *WebElement) P(level int) *WebElement {
+	by := PXpathStrategy(level, w.WebElementSelector)
+
+	eId, err := w.WebClient.FromElement(by, w.SessionId, w.WebElementId)
+	if err != nil {
+		panic(fmt.Sprintf("error on find element: %v", err))
+	}
+
+	return &WebElement{
+		WebDriver:          w.WebDriver,
+		WebElementId:       eId,
+		WebElementSelector: by,
+	}
+}
+
 func (w *WebElement) Parent() *WebElement {
-	by := ParentXpathTextStrategy(w.WebElementSelector)
+	by := ParentXpathStrategy(w.WebElementSelector)
 
 	eId, err := w.WebClient.FromElement(by, w.SessionId, w.WebElementId)
 	if err != nil {

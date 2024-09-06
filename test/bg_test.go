@@ -36,7 +36,7 @@ func attribute() {
 	d.Cl("//*[text()='Location']/..//*[@data-qa-id='gears']")
 	fmt.Println(d.F("Name *").Attr("for"))
 	d.Cl("Add Root Item")
-	d.F("Add Item").Parent().Parent().Next("Name *").Click()
+	d.F("Add Item").P(2).Next("Name *").Click()
 	d.Active().Input("ae")
 	d.Cl("Add")
 	time.Sleep(time.Second * 5)

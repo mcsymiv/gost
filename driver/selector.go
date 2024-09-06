@@ -87,13 +87,22 @@ func NextXpathTextStrategy(value string) *data.Selector {
 	return s
 }
 
-func ParentXpathTextStrategy(sel *data.Selector) *data.Selector {
+func PXpathStrategy(level int, sel *data.Selector) *data.Selector {
 	var s *data.Selector = &data.Selector{}
-
-	xpathText := "(" + sel.Value + ")/.."
-
+	s.Value = sel.Value
+	for range level {
+		s.Value = fmt.Sprintf("(%s)/..", s.Value)
+	}
 	s.Using = data.ByXPath
+
+	return s
+}
+
+func ParentXpathStrategy(sel *data.Selector) *data.Selector {
+	var s *data.Selector = &data.Selector{}
+	xpathText := fmt.Sprintf("(%s)/..", sel.Value)
 	s.Value = xpathText
+	s.Using = data.ByXPath
 
 	return s
 }
