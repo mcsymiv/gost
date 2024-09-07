@@ -130,20 +130,59 @@ func (w *WebDriver) Tab(n int) {
 func (w *WebDriver) Quit() {
 	err := w.WebClient.Quit(w.SessionId)
 	if err != nil {
-		panic(fmt.Sprintf("error on open: %v", err))
+		panic(fmt.Sprintf("error on quit: %v", err))
 	}
 }
 
 func (w *WebDriver) FindElement(selector *data.Selector) *WebElement {
 	eId, err := w.WebClient.FindElement(selector, w.SessionId)
 	if err != nil {
-		panic(fmt.Sprintf("error on open: %v", err))
+		panic(fmt.Sprintf("error on find element: %v", err))
 	}
 
 	return &WebElement{
 		WebDriver:    w,
 		WebElementId: eId,
 	}
+}
+
+func (w *WebDriver) FindElements(selector *data.Selector) []*WebElement {
+	elementsId, err := w.WebClient.FindElements(selector, w.SessionId)
+	if err != nil {
+		panic(fmt.Sprintf("error on find elements: %v", err))
+	}
+
+	var els []*WebElement
+
+	for _, id := range elementsId {
+		els = append(els, &WebElement{
+			WebDriver:          w,
+			WebElementId:       id,
+			WebElementSelector: selector,
+		})
+	}
+
+	return els
+}
+
+func (w *WebDriver) Fs(s string) []*WebElement {
+	selector := Strategy(s)
+	elementsId, err := w.WebClient.FindElements(selector, w.SessionId)
+	if err != nil {
+		panic(fmt.Sprintf("error on find element: %v", err))
+	}
+
+	var els []*WebElement
+
+	for _, id := range elementsId {
+		els = append(els, &WebElement{
+			WebDriver:          w,
+			WebElementId:       id,
+			WebElementSelector: selector,
+		})
+	}
+
+	return els
 }
 
 func (w *WebDriver) F(s string) *WebElement {
@@ -161,9 +200,9 @@ func (w *WebDriver) F(s string) *WebElement {
 }
 
 // Next
-// finds text-based element from element
+// finds xpath element from element
 func (w *WebElement) Next(s string) *WebElement {
-	by := NextXpathTextStrategy(s)
+	by := NextStrategy(s)
 
 	eId, err := w.WebClient.FromElement(by, w.SessionId, w.WebElementId)
 	if err != nil {
@@ -177,10 +216,31 @@ func (w *WebElement) Next(s string) *WebElement {
 	}
 }
 
+func (w *WebElement) Nexts(s string) []*WebElement {
+	by := NextStrategy(s)
+
+	elementsId, err := w.WebClient.FromElements(by, w.SessionId, w.WebElementId)
+	if err != nil {
+		panic(fmt.Sprintf("error on find element: %v", err))
+	}
+
+	var els []*WebElement
+
+	for _, id := range elementsId {
+		els = append(els, &WebElement{
+			WebDriver:          w.WebDriver,
+			WebElementId:       id,
+			WebElementSelector: by,
+		})
+	}
+
+	return els
+}
+
 // P
 // invokes parent function
 // with N-level times
-func (w *WebElement) P(level int) *WebElement {
+func (w *WebElement) Up(level int) *WebElement {
 	by := PXpathStrategy(level, w.WebElementSelector)
 
 	eId, err := w.WebClient.FromElement(by, w.SessionId, w.WebElementId)

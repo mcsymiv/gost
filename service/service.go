@@ -44,7 +44,9 @@ func Handler() http.Handler {
 	sm.HandleFunc("POST /session/{sessionId}/url", wd.post())
 
 	sm.Handle("POST /session/{sessionId}/element", logger(wd.retrier(&verifyStatusOk{})))
+	sm.Handle("POST /session/{sessionId}/elements", logger(wd.retrier(&verifyStatusOk{})))
 	sm.Handle("POST /session/{sessionId}/element/{elementId}/element", logger(wd.retrier(&verifyStatusOk{})))
+	sm.Handle("POST /session/{sessionId}/element/{elementId}/elements", logger(wd.retrier(&verifyStatusOk{})))
 	sm.HandleFunc("GET /session/{sessionId}/element/active", wd.get())
 
 	sm.HandleFunc("POST /session/{sessionId}/element/{elementId}/click", wd.post())

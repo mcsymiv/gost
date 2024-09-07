@@ -51,14 +51,16 @@ const (
 	screenshotEndpoint = "%s/session/%s/screenshot"
 
 	// W3C Element
-	findElementEndpoint = "%s/session/%s/element"
-	activeEndpoint      = "%s/session/%s/element/active"
-	textEndpoint        = "%s/session/%s/element/%s/text"
-	isDisplayedEndpoint = "%s/session/%s/element/%s/displayed"
-	clickEndpoint       = "%s/session/%s/element/%s/click"
-	sendKeysEndpoint    = "%s/session/%s/element/%s/value"
-	attributeEndpoint   = "%s/session/%s/element/%s/attribute/%s"
-	fromElementEndpoint = "%s/session/%s/element/%s/element"
+	findElementEndpoint  = "%s/session/%s/element"
+	findElementsEndpoint = "%s/session/%s/elements"
+	activeEndpoint       = "%s/session/%s/element/active"
+	textEndpoint         = "%s/session/%s/element/%s/text"
+	isDisplayedEndpoint  = "%s/session/%s/element/%s/displayed"
+	clickEndpoint        = "%s/session/%s/element/%s/click"
+	sendKeysEndpoint     = "%s/session/%s/element/%s/value"
+	attributeEndpoint    = "%s/session/%s/element/%s/attribute/%s"
+	fromElementEndpoint  = "%s/session/%s/element/%s/element"
+	fromElementsEndpoint  = "%s/session/%s/element/%s/elements"
 
 	// W3C Window
 	windowEndpoint        = "%s/session/%s/window"
@@ -345,6 +347,62 @@ func (c *WebClient) FindElement(selector *data.Selector, sessionId string) (stri
 			c.Screenshot(sessionId)
 		}
 		return "", fmt.Errorf(ErrorElementId, reply.Value, err)
+	}
+
+	return eId, nil
+}
+
+func (c *WebClient) FindElements(selector *data.Selector, sessionId string) ([]string, error) {
+	body := marshalData(&data.JsonFindUsing{
+		Using: selector.Using,
+		Value: selector.Value,
+	})
+
+	p := fmt.Sprintf(findElementsEndpoint, c.WebConfig.WebServerAddr, sessionId)
+	res, err := c.Post(p, bytes.NewBuffer(body))
+	if err != nil {
+		return nil, fmt.Errorf(ErrorFindElement, err)
+	}
+
+	defer res.Body.Close()
+
+	reply := new(struct{ Value []map[string]string })
+
+	unmarshalRes(&res.Response, reply)
+	eId, err := ElementsID(reply.Value)
+	if err != nil {
+		if c.WebConfig.ScreenshotOnFail {
+			c.Screenshot(sessionId)
+		}
+		return nil, fmt.Errorf(ErrorElementId, reply.Value, err)
+	}
+
+	return eId, nil
+}
+
+func (c *WebClient) FromElements(selector *data.Selector, sessionId, elementId string) ([]string, error) {
+	body := marshalData(&data.JsonFindUsing{
+		Using: selector.Using,
+		Value: selector.Value,
+	})
+
+	p := fmt.Sprintf(fromElementsEndpoint, c.WebConfig.WebServerAddr, sessionId, elementId)
+	res, err := c.Post(p, bytes.NewBuffer(body))
+	if err != nil {
+		return nil, fmt.Errorf(ErrorFindElement, err)
+	}
+
+	defer res.Body.Close()
+
+	reply := new(struct{ Value []map[string]string })
+
+	unmarshalRes(&res.Response, reply)
+	eId, err := ElementsID(reply.Value)
+	if err != nil {
+		if c.WebConfig.ScreenshotOnFail {
+			c.Screenshot(sessionId)
+		}
+		return nil, fmt.Errorf(ErrorElementId, reply.Value, err)
 	}
 
 	return eId, nil

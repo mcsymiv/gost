@@ -69,8 +69,20 @@ func Strategy(value string) *data.Selector {
 	return s
 }
 
-func NextXpathTextStrategy(value string) *data.Selector {
+func NextStrategy(value string) *data.Selector {
 	var s *data.Selector = &data.Selector{}
+
+	if value[0] == '/' || value[1] == '/' {
+		s.Value = fmt.Sprintf(".%s", value)
+		s.Using = data.ByXPath
+		return s
+	}
+
+	if value[0] == '[' || value[0] == '#' {
+		s.Value = value
+		s.Using = data.ByCssSelector
+		return s
+	}
 
 	txt := []string{
 		".//*[text()='%[1]s']",
