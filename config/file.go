@@ -37,7 +37,7 @@ func dotenv(filepath string) error {
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		env := scanner.Text()
-		if env == "" || strings.ContainsRune(env, '#') {
+		if env == "" || strings.ContainsRune(env, '#') { // # serves as comment token, ignored by dotenv
 			continue
 		}
 
@@ -70,4 +70,12 @@ func FindFile(fPath, fName string) (string, error) {
 	}
 
 	return f, nil
+}
+
+func GetPath(dirName string) string {
+	return fmt.Sprintf("%s/%s", Root, dirName)
+}
+
+func GetRoot(dirName string) string {
+	return fmt.Sprintf("%s/", Root)
 }

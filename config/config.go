@@ -26,6 +26,7 @@ const (
 )
 
 var Config *WebConfig
+
 var (
 	_, b, _, _ = runtime.Caller(0)
 
@@ -102,21 +103,21 @@ func DefaultConfig() *WebConfig {
 	return &WebConfig{
 		WebServerAddr:    "http://localhost:8080",
 		WebDriverAddr:    "http://localhost:4444",
-		DriverLogsFile:   "../driver.logs",
-		ConfigFile:       "../.config",
+		DriverLogsFile:   GetRoot("driver.logs"),
+		ConfigFile:       ".config",
 		ScreenshotOnFail: true,
 		WaitForTimeout:   20,
 		WaitForInterval:  200,
-		JsFilesPath:      "../js",
-		ScreenshotsPath:  "../screenshots",
-		RecordsPath:      "../records",
+		JsFilesPath:      GetPath("js"),
+		ScreenshotsPath:  GetPath("screenshots"),
+		RecordsPath:      GetPath("records"),
 	}
 }
 
 func NewConfig(confFn ...ConfigFunc) *WebConfig {
 	var conf *WebConfig
 
-	err := loadEnv("../", ".config")
+	err := loadEnv(Root, ".config")
 	if err != nil {
 		conf = DefaultConfig()
 
@@ -128,12 +129,12 @@ func NewConfig(confFn ...ConfigFunc) *WebConfig {
 		WebServerAddr:   fmt.Sprintf("%s:%s", os.Getenv("SERVER_HOST"), os.Getenv("SERVER_PORT")),
 		WebDriverPort:   os.Getenv("DRIVER_PORT"),
 		WebDriverAddr:   fmt.Sprintf("%s:%s", os.Getenv("DRIVER_HOST"), os.Getenv("DRIVER_PORT")),
-		DriverLogsFile:  os.Getenv("DRIVER_LOGS"),
+		DriverLogsFile:  GetRoot(os.Getenv("DRIVER_LOGS")),
 		WaitForTimeout:  toWaitTimeout(os.Getenv("WAIT_TIMEOUT")),
 		WaitForInterval: toWaitInterval(os.Getenv("WAIT_INTERVAL")),
-		JsFilesPath:     os.Getenv("JS_FILES_PATH"),
-		ScreenshotsPath: os.Getenv("SCREENSHOTS_PATH"),
-		RecordsPath:     os.Getenv("RECORDS_PATH"),
+		JsFilesPath:     GetPath(os.Getenv("JS_FILES_PATH")),
+		ScreenshotsPath: GetPath(os.Getenv("SCREENSHOTS_PATH")),
+		RecordsPath:     GetPath(os.Getenv("RECORDS_PATH")),
 	}
 
 	return conf

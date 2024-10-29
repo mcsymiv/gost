@@ -49,7 +49,7 @@ func Handler() http.Handler {
 	sm.Handle("POST /session/{sessionId}/element/{elementId}/elements", logger(wd.retrier(&verifyStatusOk{})))
 	sm.HandleFunc("GET /session/{sessionId}/element/active", wd.get())
 
-	sm.HandleFunc("POST /session/{sessionId}/element/{elementId}/click", wd.post())
+	sm.Handle("POST /session/{sessionId}/element/{elementId}/click", wd.retrier(&verifyStatusOk{}))
 	sm.HandleFunc("POST /session/{sessionId}/element/{elementId}/value", wd.post())
 	sm.HandleFunc("GET /session/{sessionId}/element/{elementId}/text", wd.get())
 	sm.Handle("GET /session/{sessionId}/element/{elementId}/displayed", wd.isRetrier(&verifyValue{}))

@@ -47,7 +47,6 @@ func (wd *WebDriverHandler) retrier(v verifier) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		url := fmt.Sprintf("%s%s", wd.conf.WebDriverAddr, r.URL.Path)
-		fmt.Println("retry find element")
 
 		var data []byte
 		var err error

@@ -16,3 +16,7 @@ screenshots/*
 # generated chrome
 # records .json
 records/*
+
+# tests
+test/bg_test.go
+test/tc_test.go

@@ -105,15 +105,15 @@ func result(testEnv string) {
 	var rLinks []string
 	sNames := []string{
 		// os.Getenv("SUITE_NAME_1"), // smoke
-		os.Getenv("SUITE_NAME_2"), // regress
-		os.Getenv("SUITE_NAME_3"), // single
-		os.Getenv("SUITE_NAME_4"), // m
-		os.Getenv("SUITE_NAME_5"), // ol
-		os.Getenv("SUITE_NAME_6"), // hil
-		// os.Getenv("SUITE_NAME_7"), // gm
-		os.Getenv("SUITE_NAME_8"), // business
-		os.Getenv("SUITE_NAME_9"), // visual
-		// os.Getenv("SUITE_NAME_10"), // iframe
+		os.Getenv("SUITE_NAME_2"),  // regress
+		os.Getenv("SUITE_NAME_3"),  // single
+		os.Getenv("SUITE_NAME_4"),  // m
+		os.Getenv("SUITE_NAME_5"),  // ol
+		os.Getenv("SUITE_NAME_6"),  // hil
+		os.Getenv("SUITE_NAME_7"),  // gm
+		os.Getenv("SUITE_NAME_8"),  // business
+		os.Getenv("SUITE_NAME_9"),  // visual
+		os.Getenv("SUITE_NAME_10"), // iframe
 	}
 
 	d.Url(fmt.Sprintf("%s%s", host, "/login.html"))
@@ -174,4 +174,3 @@ func TestTc(t *testing.T) {
 		}
 	}
 }
-
