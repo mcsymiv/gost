@@ -60,7 +60,7 @@ const (
 	sendKeysEndpoint     = "%s/session/%s/element/%s/value"
 	attributeEndpoint    = "%s/session/%s/element/%s/attribute/%s"
 	fromElementEndpoint  = "%s/session/%s/element/%s/element"
-	fromElementsEndpoint  = "%s/session/%s/element/%s/elements"
+	fromElementsEndpoint = "%s/session/%s/element/%s/elements"
 
 	// W3C Window
 	windowEndpoint        = "%s/session/%s/window"
