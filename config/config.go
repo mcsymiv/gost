@@ -125,16 +125,17 @@ func NewConfig(confFn ...ConfigFunc) *WebConfig {
 	}
 
 	conf = &WebConfig{
-		WebServerPort:   os.Getenv("SERVER_PORT"),
-		WebServerAddr:   fmt.Sprintf("%s:%s", os.Getenv("SERVER_HOST"), os.Getenv("SERVER_PORT")),
-		WebDriverPort:   os.Getenv("DRIVER_PORT"),
-		WebDriverAddr:   fmt.Sprintf("%s:%s", os.Getenv("DRIVER_HOST"), os.Getenv("DRIVER_PORT")),
-		DriverLogsFile:  GetRoot(os.Getenv("DRIVER_LOGS")),
-		WaitForTimeout:  toWaitTimeout(os.Getenv("WAIT_TIMEOUT")),
-		WaitForInterval: toWaitInterval(os.Getenv("WAIT_INTERVAL")),
-		JsFilesPath:     GetPath(os.Getenv("JS_FILES_PATH")),
-		ScreenshotsPath: GetPath(os.Getenv("SCREENSHOTS_PATH")),
-		RecordsPath:     GetPath(os.Getenv("RECORDS_PATH")),
+		WebServerPort:    os.Getenv("SERVER_PORT"),
+		WebServerAddr:    fmt.Sprintf("%s:%s", os.Getenv("SERVER_HOST"), os.Getenv("SERVER_PORT")),
+		WebDriverPort:    os.Getenv("DRIVER_PORT"),
+		WebDriverAddr:    fmt.Sprintf("%s:%s", os.Getenv("DRIVER_HOST"), os.Getenv("DRIVER_PORT")),
+		DriverLogsFile:   GetRoot(os.Getenv("DRIVER_LOGS")),
+		WaitForTimeout:   toWaitTimeout(os.Getenv("WAIT_TIMEOUT")),
+		WaitForInterval:  toWaitInterval(os.Getenv("WAIT_INTERVAL")),
+		JsFilesPath:      GetPath(os.Getenv("JS_FILES_PATH")),
+		ScreenshotsPath:  GetPath(os.Getenv("SCREENSHOTS_PATH")),
+		RecordsPath:      GetPath(os.Getenv("RECORDS_PATH")),
+		ScreenshotOnFail: WebConfigDriverScreenshoOnFail(os.Getenv("SCREENSHOT_ON_FAIL")),
 	}
 
 	return conf
@@ -152,17 +153,13 @@ func WebConfigDriverAddr(addr string) ConfigFunc {
 	}
 }
 
-func WebConfigDriverScreenshoOnFail(onFail string) ConfigFunc {
-	var screenshotOnFail bool
+func WebConfigDriverScreenshoOnFail(onFail string) bool {
 	f, err := strconv.ParseBool(onFail)
 	if err != nil {
-		screenshotOnFail = true
+		return f
 	}
 
-	screenshotOnFail = f
-	return func(conf *WebConfig) {
-		conf.ScreenshotOnFail = screenshotOnFail
-	}
+	return true
 }
 
 func toWaitTimeout(dur string) time.Duration {
